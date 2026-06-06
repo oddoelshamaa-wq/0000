@@ -1,78 +1,45 @@
-const CACHE_NAME = 'shamaa-v4';
-const DB_NAME = 'ShamaaOfflineDB';
+const CACHE_NAME = 'shamaa-v3';
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  'https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
+  'https://unpkg.com/html5-qrcode'
+];
 
-// عند تثبيت الـ Service Worker
+// تثبيت ملفات النظام في الذاكرة
 self.addEventListener('install', (event) => {
-    self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS);
+    })
+  );
+  self.skipWaiting();
 });
 
-// تفعيل المزامنة في الخلفية
-self.addEventListener('sync', (event) => {
-    if (event.tag === 'sync-punches') {
-        event.waitUntil(syncPunches());
-    }
+// تفعيل النسخة الجديدة وحذف القديمة
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)));
+    })
+  );
 });
 
-// وظيفة المزامنة ورفع البيانات لـ Firebase
-async function syncPunches() {
-    const db = await openDB();
-    const punches = await getAllPunches(db);
-
-    for (const punch of punches) {
-        try {
-            // استخدام REST API الخاص بـ Firebase للرفع من الخلفية
-            const url = `https://brak-nagaf-default-rtdb.firebaseio.com/users/${punch.username}/attendance/${punch.date}.json`;
-            
-            // جلب البيانات الحالية للتأكد من عدم مسح بيانات موجودة
-            const response = await fetch(url);
-            const currentData = await response.json() || {};
-
-            let updateData = {};
-            if (punch.type === 'in') {
-                updateData = { ...currentData, clockIn: punch.time, status: 'Present', date: punch.date, deviceId: punch.deviceId };
-            } else {
-                updateData = { ...currentData, clockOut: punch.time };
-            }
-
-            await fetch(url, {
-                method: 'PATCH',
-                body: JSON.stringify(updateData)
-            });
-
-            // حذف البصمة من قاعدة البيانات المحلية بعد نجاح الرفع
-            await deletePunch(db, punch.id);
-            console.log('تم رفع البصمة من الخلفية بنجاح:', punch);
-        } catch (error) {
-            console.error('فشلت المزامنة في الخلفية، سيتم المحاولة لاحقاً', error);
-            throw error; // لضمان إعادة المحاولة عند توفر الإنترنت مرة أخرى
+// الاستجابة للطلبات حتى في حالة عدم وجود إنترنت
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request).catch(() => {
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
         }
-    }
-}
-
-// دالات التعامل مع IndexedDB (قاعدة البيانات المحلية)
-function openDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, 1);
-        request.onupgradeneeded = (e) => {
-            e.target.result.createObjectStore('punches', { keyPath: 'id', autoIncrement: true });
-        };
-        request.onsuccess = (e) => resolve(e.target.result);
-        request.onerror = (e) => reject(e.target.error);
-    });
-}
-
-async function getAllPunches(db) {
-    return new Promise((resolve) => {
-        const transaction = db.transaction('punches', 'readonly');
-        const store = transaction.objectStore('punches');
-        store.getAll().onsuccess = (e) => resolve(e.target.result);
-    });
-}
-
-async function deletePunch(db, id) {
-    return new Promise((resolve) => {
-        const transaction = db.transaction('punches', 'readwrite');
-        const store = transaction.objectStore('punches');
-        store.delete(id).onsuccess = () => resolve();
-    });
-}
+      });
+    })
+  );
+});
