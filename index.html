@@ -718,37 +718,45 @@ function generateQR(){
     },1000);
 }
 
-// ===== تسجيل الدخول =====
-function doLogin(){
-    
-    const u=document.getElementById('loginUser').value.trim().toLowerCase();
-    const p=document.getElementById('loginPass').value.trim();
-    if(!u||!p){toast('أدخل اسم المستخدم وكلمة المرور','warn');return;}
+function doLogin() {
+    const u = document.getElementById('loginUser').value.trim().toLowerCase();
+    const p = document.getElementById('loginPass').value.trim();
+    if (!u || !p) { toast('أدخل اسم المستخدم وكلمة المرور', 'warn'); return; }
 
-    if(isOnline&&firebaseReady){
-        if(!allUsers[u]){toast('اسم المستخدم غير موجود','error');return;}
-        if(allUsers[u].password!==p){toast('كلمة المرور غير صحيحة','error');return;}
-        ME={username:u,...allUsers[u]};ME.role=ADMINS.includes(u)?'admin':'employee';
-        saveLocalCredentials(u,allUsers[u]);addLocalUsername(u);
-        if(ME.role!=='admin')syncLocalAttToFirebase(u);
-        if(ME.role==='admin'){enterDashboard();return;}
-        const approved=ME.approvedDevice;
-        if(approved&&approved===DEV_ID){enterDashboard();}
-        else if(approved&&approved!==DEV_ID){document.getElementById('rejDevId').textContent=DEV_ID;showScreen('screenRejected');}
-        else{showBindScreen(!!ME.pendingDevice);}
-    }else{
-        const lc=getLocalCredentials(u);
-        if(!lc){toast('لازم تفتح نت أول مرة بس عشان تسجل دخول','error');return;}
-        if(lc.password!==p){toast('كلمة المرور غلط (أوفلاين)','error');return;}
-        if(ADMINS.includes(u)){toast('المدير لازم يكون متصل بالنت','error');return;}
-        ME={username:u,realName:lc.realName,password:lc.password,role:lc.role,approvedDevice:lc.approvedDevice,_offlineMode:true};
-        if(ME.approvedDevice&&ME.approvedDevice!==DEV_ID){document.getElementById('rejDevId').textContent=DEV_ID;showScreen('screenRejected');return;}
-        if(!ME.approvedDevice){toast('الجهاز مش مربوط - لازم تربطه أول مرة بالنت','warn');return;}
-        toast('دخول أوفلاين - البصمات هتتحفظ محلياً','info');
+    if (isOnline && firebaseReady) {
+        if (!allUsers[u]) { toast('اسم المستخدم غير موجود', 'error'); return; }
+        if (allUsers[u].password !== p) { toast('كلمة المرور غير صحيحة', 'error'); return; }
+        
+        ME = { username: u, ...allUsers[u] };
+        ME.role = ADMINS.includes(u) ? 'admin' : 'employee';
+        
+        // حفظ الجلسة واسم المستخدم للفتح التلقائي مستقبلاً
+        localStorage.setItem('sh_active_user', u);
+        saveLocalCredentials(u, allUsers[u]);
+        addLocalUsername(u);
+
+        if (ME.role === 'admin') { enterDashboard(); return; }
+        
+        const approved = ME.approvedDevice;
+        if (approved && approved === DEV_ID) { 
+            enterDashboard(); 
+        } else if (approved && approved !== DEV_ID) {
+            document.getElementById('rejDevId').textContent = DEV_ID;
+            showScreen('screenRejected');
+        } else {
+            showBindScreen(!!ME.pendingDevice);
+        }
+    } else {
+        // تسجيل دخول أوفلاين
+        const lc = getLocalCredentials(u);
+        if (!lc) { toast('يجب تسجيل الدخول لأول مرة وأنت متصل بالإنترنت', 'error'); return; }
+        if (lc.password !== p) { toast('كلمة المرور غير صحيحة', 'error'); return; }
+        
+        ME = { username: u, ...lc, _offlineMode: true };
+        localStorage.setItem('sh_active_user', u);
         enterDashboard();
     }
 }
-
 function doLogout(){
     ME=null;
     if(bindCheckTimer){clearInterval(bindCheckTimer);bindCheckTimer=null;}
@@ -869,21 +877,43 @@ function stopMainScanner(){
     title.textContent='صوّب QR المدير';title.style.color='var(--text)';
     desc.textContent='اضغط الزر ده وصرّب الكاميرا نحو الـ QR اللي على شاشة المدير عشان تسجل بصمتك';steps.classList.remove('hidden');isScanning=false;
 }
-function processScannedQR(text){
-    if(!ME)return toast('سجل دخولك أولاً','error');
-    const now=new Date();
-    const datePart=String(now.getDate()).padStart(2,'0')+String(now.getMonth()+1).padStart(2,'0')+String(now.getFullYear()).slice(-2);
-    const ct=Math.floor(Date.now()/15000),pt=ct-1;
-    const v1=`SHAMAA*${datePart}*${ct}`,v2=`SHAMAA*${datePart}*${pt}`;
-    if(text===v1||text===v2){
-        const time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-        const today=getTodayStr();
-        let la=getLocalAttendance(ME.username);let cd=la[today]||{};
-        if(!cd.clockIn){savePunchOffline('in',time);}
-        else if(!cd.clockOut){savePunchOffline('out',time);}
-        else{toast('أنت مسجل حضور وانصراف بالفعل اليوم','warn');if(navigator.vibrate)navigator.vibrate(200);}
+function processScannedQR(text) {
+    if (!ME) return toast('سجل دخولك أولاً', 'error');
+    
+    const now = new Date();
+    const datePart = String(now.getDate()).padStart(2, '0') + 
+                     String(now.getMonth() + 1).padStart(2, '0') + 
+                     String(now.getFullYear()).slice(-2);
+    
+    // حساب التوقيت الحالي والسابق (للسماح بفارق 15 ثانية)
+    const ct = Math.floor(Date.now() / 15000);
+    const pt = ct - 1;
+    const v1 = `SHAMAA*${datePart}*${ct}`;
+    const v2 = `SHAMAA*${datePart}*${pt}`;
+
+    if (text === v1 || text === v2) {
+        const time = String(now.getHours()).padStart(2, '0') + ':' + 
+                     String(now.getMinutes()).padStart(2, '0');
+        const today = getTodayStr();
+        
+        // التحقق من السجل المحلي أولاً لسرعة الاستجابة
+        let la = getLocalAttendance(ME.username);
+        let cd = la[today] || {};
+
+        if (!cd.clockIn) {
+            savePunchOffline('in', time);
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]); // اهتزاز للنجاح
+        } else if (!cd.clockOut) {
+            savePunchOffline('out', time);
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        } else {
+            toast('أنت مسجل حضور وانصراف بالفعل اليوم', 'warn');
+        }
         stopMainScanner();
-    }else{toast('كود منتهي الصلاحية أو غير صحيح','error');if(navigator.vibrate)navigator.vibrate(200);}
+    } else {
+        toast('كود غير صحيح أو منتهي الصلاحية', 'error');
+        if (navigator.vibrate) navigator.vibrate(400); // اهتزاز طويل للخطأ
+    }
 }
 function getTodayStr(){return new Date().toISOString().split('T')[0];}
 
@@ -1092,20 +1122,19 @@ if ('serviceWorker' in navigator) {
 }
 // دالة لفحص هل الموظف مسجل دخول سابقاً أم لا
 function checkPersistentLogin() {
-    const activeUser = localStorage.getItem('sh_active_user'); // نبحث عن اسم المستخدم النشط
+    const activeUser = localStorage.getItem('sh_active_user');
     if (activeUser) {
-        const creds = LS.get('creds_' + activeUser); // نجلب بياناته المحفوظة محلياً
-        if (creds) {
-            // إعادة تعيين بيانات المستخدم الحالي
-            ME = { 
-                username: activeUser, 
-                ...creds,
-                role: ADMINS.includes(activeUser) ? 'admin' : 'employee'
-            };
+        const lc = getLocalCredentials(activeUser);
+        if (lc) {
+            ME = { username: activeUser, ...lc };
+            ME.role = ADMINS.includes(activeUser) ? 'admin' : 'employee';
             
-            // الدخول مباشرة للوحة التحكم بدون طلب كلمة مرور
-            console.log("تم تسجيل الدخول تلقائياً للمستخدم: " + activeUser);
-            enterDashboard(); 
+            // إذا كان موظف وجهازه معتمد محلياً، ادخله فوراً
+            if (ME.role === 'employee' && ME.approvedDevice === DEV_ID) {
+                enterDashboard();
+            } else if (ME.role === 'admin') {
+                enterDashboard();
+            }
         }
     }
 }
@@ -1114,6 +1143,49 @@ function checkPersistentLogin() {
 window.addEventListener('load', () => {
     checkPersistentLogin();
 });
+// تشغيل المزامنة كلما رجع الإنترنت تلقائياً
+window.addEventListener('online', () => {
+    updateNetUI();
+    syncOfflinePunches(); // استدعاء فوري للمزامنة
+});
+
+// وظيفة المزامنة المحسنة
+async function syncOfflinePunches() {
+    if (!navigator.onLine || !firebaseReady) return;
+    
+    let q = LS.get('sync_queue', []);
+    if (q.length === 0) return;
+
+    toast(`جاري رفع ${q.length} بصمة محفوظة...`, 'info');
+
+    for (const item of [...q]) {
+        try {
+            const ref = db.ref(`users/${item.username}/attendance/${item.date}`);
+            let data = {};
+            if (item.type === 'in') {
+                data = { clockIn: item.time, status: 'Present', deviceId: item.deviceId, date: item.date };
+            } else {
+                data = { clockOut: item.time };
+            }
+            
+            await ref.update(data);
+            
+            // إزالة من الطابور بعد النجاح
+            q = q.filter(x => x.timestamp !== item.timestamp);
+            LS.set('sync_queue', q);
+            
+            // تحديث العلامة المحلية من "أوفلاين" إلى "مرفوع"
+            let la = getLocalAttendance(item.username);
+            if (la[item.date]) delete la[item.date]._offline;
+            LS.set('att_' + item.username, la);
+            
+        } catch (e) {
+            console.error("فشلت المزامنة لهذا العنصر، سأحاول لاحقاً");
+        }
+    }
+    updateSyncBanner();
+    renderWeekCalendar();
+}
 </script>
 </body>
 </html>
