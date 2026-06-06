@@ -11,6 +11,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- رابط ملف المانيفست -->
+<link rel="manifest" href="manifest.json">
+<!-- كود تعريف التطبيق لموبايلات ايفون -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2991/2991174.png">
 <style>
 :root{--bg:#060a13;--card:rgba(15,23,42,0.75);--card-solid:#0f172a;--primary:#0ea5e9;--primary-glow:rgba(14,165,233,0.25);--accent:#f59e0b;--accent-glow:rgba(245,158,11,0.2);--success:#10b981;--success-glow:rgba(16,185,129,0.25);--danger:#f43f5e;--danger-glow:rgba(244,63,94,0.2);--text:#e2e8f0;--text-dim:#64748b;--border:rgba(255,255,255,0.07);--radius:18px;--off-color:#8b5cf6;--off-glow:rgba(139,92,246,0.25)}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -714,6 +720,7 @@ function generateQR(){
 
 // ===== تسجيل الدخول =====
 function doLogin(){
+    
     const u=document.getElementById('loginUser').value.trim().toLowerCase();
     const p=document.getElementById('loginPass').value.trim();
     if(!u||!p){toast('أدخل اسم المستخدم وكلمة المرور','warn');return;}
@@ -1076,6 +1083,37 @@ document.getElementById('corrModal').addEventListener('click',e=>{if(e.target===
 document.getElementById('shiftDetailModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeShiftDetail();});
 document.getElementById('empQrModalOverlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeEmpQrModal();});
 window.addEventListener('online',syncOfflinePunches);
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('تم تفعيل وضع الأوفلاين بنجاح!'))
+      .catch(err => console.log('فشل تفعيل الأوفلاين', err));
+  });
+}
+// دالة لفحص هل الموظف مسجل دخول سابقاً أم لا
+function checkPersistentLogin() {
+    const activeUser = localStorage.getItem('sh_active_user'); // نبحث عن اسم المستخدم النشط
+    if (activeUser) {
+        const creds = LS.get('creds_' + activeUser); // نجلب بياناته المحفوظة محلياً
+        if (creds) {
+            // إعادة تعيين بيانات المستخدم الحالي
+            ME = { 
+                username: activeUser, 
+                ...creds,
+                role: ADMINS.includes(activeUser) ? 'admin' : 'employee'
+            };
+            
+            // الدخول مباشرة للوحة التحكم بدون طلب كلمة مرور
+            console.log("تم تسجيل الدخول تلقائياً للمستخدم: " + activeUser);
+            enterDashboard(); 
+        }
+    }
+}
+
+// تشغيل الفحص بمجرد تحميل الصفحة
+window.addEventListener('load', () => {
+    checkPersistentLogin();
+});
 </script>
 </body>
 </html>
