@@ -43,3 +43,15 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+// إضافة مستمع لحدث المزامنة في الخلفية
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-punches') {
+    event.waitUntil(syncPunches());
+  }
+});
+
+async function syncPunches() {
+  // هنا يجب كتابة كود يقرأ من IndexedDB 
+  // ويرسل البيانات إلى Firebase مباشرة من السيرفس وركر
+  console.log("محاولة المزامنة في الخلفية...");
+}
