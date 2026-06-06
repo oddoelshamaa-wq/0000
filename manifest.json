@@ -1,0 +1,15 @@
+{
+  "name": "Shamaa System",
+  "short_name": "Shamaa",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#060a13",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2991/2991174.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
