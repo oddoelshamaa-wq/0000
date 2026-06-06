@@ -43,3 +43,7 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+window.addEventListener('online', () => {
+    console.log("الإنترنت عاد! جاري رفع البصمات المعلقة...");
+    syncOfflinePunches(); 
+});
