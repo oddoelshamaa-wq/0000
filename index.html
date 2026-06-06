@@ -887,65 +887,16 @@ function processScannedQR(text){
 }
 function getTodayStr(){return new Date().toISOString().split('T')[0];}
 
-// إنشاء قاعدة البيانات المحلية عند بدء التطبيق
-const dbRequest = indexedDB.open("ShamaaOfflineDB", 1);
-dbRequest.onupgradeneeded = (e) => {
-    const db = e.target.result;
-    if (!db.objectStoreNames.contains('punches')) {
-        db.createObjectStore('punches', { keyPath: 'id', autoIncrement: true });
-    }
-};
-
-async function savePunchOffline(time) {
-    const today = TODAY_STR();
-    let type = '';
-    
-    // فحص محلي سريع عشان نعرف ده دخول ولا خروج
-    let la = getLocalAttendance(ME.username);
-    if (!la[today]) { type = 'in'; } 
-    else if (!la[today].clockOut) { type = 'out'; } 
-    else { toast('مسجل بالفعل اليوم', 'warn'); return; }
-
-    const punchRecord = {
-        username: ME.username,
-        date: today,
-        time: time,
-        type: type,
-        deviceId: DEV_ID
-    };
-
-    // 1. حفظ في IndexedDB (القاعدة اللي السيرفس وركر بيشوفها)
-    const dbLocal = await new Promise(res => {
-        const req = indexedDB.open("ShamaaOfflineDB", 1);
-        req.onsuccess = () => res(req.result);
-        req.onupgradeneeded = (e) => e.target.result.createObjectStore('punches', { keyPath: 'id', autoIncrement: true });
-    });
-
-    const tx = dbLocal.transaction('punches', 'readwrite');
-    tx.objectStore('punches').add(punchRecord);
-
-    // 2. تحديث الشكل قدام الموظف فوراً
-    if(type === 'in') la[today] = {clockIn: time, status: 'Present', _offline: true};
-    else la[today].clockOut = time;
-    LS.set('att_' + ME.username, la);
-    renderEmpStatusBar(la[today]);
-
-    // 3. الأمر السحري: تسجيل مهمة مزامنة خلفية
-    if ('serviceWorker' in navigator && 'SyncManager' in window) {
-        navigator.serviceWorker.ready.then(reg => {
-            return reg.sync.register('sync-punches');
-        }).then(() => {
-            console.log('تم جدولة الرفع التلقائي في الخلفية');
-        }).catch(err => {
-            console.log('المتصفح رفض المزامنة الخلفية، هيرفع لما يفتح التطبيق');
-        });
-    }
-
-    showPunchConfirm('offline', 
-        type === 'in' ? 'تم تسجيل حضور' : 'تم تسجيل انصراف', 
-        time, 
-        'سيتم الرفع تلقائياً فور توفر إنترنت (حتى لو التطبيق مغلق)'
-    );
+function savePunchOffline(type,time){
+    const today=getTodayStr();
+    let la=getLocalAttendance(ME.username);if(!la[today])la[today]={status:'Present',date:today};
+    if(type==='in'){la[today].clockIn=time;la[today].status='Present';}else{la[today].clockOut=time;}
+    la[today]._offline=true;LS.set('att_'+ME.username,la);
+    let q=LS.get('sync_queue',[]);q.push({username:ME.username,date:today,time:time,type:type,deviceId:DEV_ID,timestamp:Date.now()});LS.set('sync_queue',q);
+    renderEmpStatusLocal();renderWeekCalendar();updateSyncBanner();
+    const label=type==='in'?'حضور':'انصراف';
+    showPunchConfirm('offline',`تم تسجيل ${label}`,time,'تم الحفظ بنجاح (سيتم الرفع فور توفر إنترنت)');
+    if(navigator.onLine)syncOfflinePunches();
 }
 
 function showPunchConfirm(type,title,time,sub){
@@ -1163,11 +1114,6 @@ function checkPersistentLogin() {
 window.addEventListener('load', () => {
     checkPersistentLogin();
 });
-if (navigator.storage && navigator.storage.persist) {
-  navigator.storage.persist().then(persistent => {
-    if (persistent) console.log("تم تفعيل التخزين المستمر: البيانات لن تُحذف تلقائياً.");
-  });
-}
 </script>
 </body>
 </html>
