@@ -887,16 +887,58 @@ function processScannedQR(text){
 }
 function getTodayStr(){return new Date().toISOString().split('T')[0];}
 
-function savePunchOffline(type,time){
-    const today=getTodayStr();
-    let la=getLocalAttendance(ME.username);if(!la[today])la[today]={status:'Present',date:today};
-    if(type==='in'){la[today].clockIn=time;la[today].status='Present';}else{la[today].clockOut=time;}
-    la[today]._offline=true;LS.set('att_'+ME.username,la);
-    let q=LS.get('sync_queue',[]);q.push({username:ME.username,date:today,time:time,type:type,deviceId:DEV_ID,timestamp:Date.now()});LS.set('sync_queue',q);
-    renderEmpStatusLocal();renderWeekCalendar();updateSyncBanner();
-    const label=type==='in'?'حضور':'انصراف';
-    showPunchConfirm('offline',`تم تسجيل ${label}`,time,'تم الحفظ بنجاح (سيتم الرفع فور توفر إنترنت)');
-    if(navigator.onLine)syncOfflinePunches();
+async function savePunchOffline(type, time) {
+    const today = getTodayStr();
+    const punchData = {
+        username: ME.username,
+        date: today,
+        time: time,
+        type: type,
+        deviceId: DEV_ID,
+        timestamp: Date.now()
+    };
+
+    // 1. حفظ في IndexedDB ليراها الـ Service Worker في الخلفية
+    await saveToIndexedDB(punchData);
+
+    // 2. تحديث الواجهة فوراً (كما كان سابقاً)
+    let la = getLocalAttendance(ME.username);
+    if (!la[today]) la[today] = { status: 'Present', date: today };
+    if (type === 'in') { la[today].clockIn = time; la[today].status = 'Present'; } 
+    else { la[today].clockOut = time; }
+    la[today]._offline = true;
+    LS.set('att_' + ME.username, la);
+
+    renderEmpStatusLocal();
+    renderWeekCalendar();
+
+    // 3. طلب المزامنة في الخلفية من المتصفح
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+        navigator.serviceWorker.ready.then(registration => {
+            return registration.sync.register('sync-punches');
+        }).then(() => {
+            console.log('تم تسجيل طلب المزامنة في الخلفية');
+        }).catch(err => {
+            console.log('المتصفح لا يدعم المزامنة التلقائية حالياً، سيتم الرفع عند فتح التطبيق', err);
+        });
+    }
+
+    const label = type === 'in' ? 'حضور' : 'انصراف';
+    showPunchConfirm('offline', `تم تسجيل ${label}`, time, 'سيتم رفع البصمة تلقائياً فور توفر إنترنت حتى لو التطبيق مغلق');
+}
+
+// دالة مساعدة لحفظ البيانات في IndexedDB
+function saveToIndexedDB(data) {
+    return new Promise((resolve) => {
+        const request = indexedDB.open("ShamaaDB", 1);
+        request.onupgradeneeded = e => e.target.result.createObjectStore("syncQueue", { keyPath: "id", autoIncrement: true });
+        request.onsuccess = e => {
+            const db = e.target.result;
+            const transaction = db.transaction("syncQueue", "readwrite");
+            transaction.objectStore("syncQueue").add(data);
+            resolve();
+        };
+    });
 }
 
 function showPunchConfirm(type,title,time,sub){
