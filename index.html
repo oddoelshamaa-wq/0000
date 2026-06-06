@@ -939,7 +939,15 @@ function processScannedQR(text) {
     }
 }
 
-function savePunchOffline(time) {
+// دالة لفتح قاعدة البيانات المحلية من الصفحة الرئيسية
+function openLocalDB() {
+    return new Promise((resolve) => {
+        const request = indexedDB.open("ShamaaOfflineDB", 1);
+        request.onsuccess = (e) => resolve(e.target.result);
+    });
+}
+
+async function savePunchOffline(time) {
     const today = getTodayStr();
     let la = getLocalAttendance(ME.username);
     if (!la[today]) la[today] = { date: today, status: 'Present' };
@@ -956,12 +964,10 @@ function savePunchOffline(time) {
         return;
     }
 
-    la[today]._offline = true;
-    LS.set('att_' + ME.username, la);
-
-    // إضافة لزمام المزامنة
-    let q = LS.get('sync_queue', []);
-    q.push({
+    // 1. حفظ في indexedDB للمزامنة في الخلفية
+    const dbLocal = await openLocalDB();
+    const transaction = dbLocal.transaction('punches', 'readwrite');
+    transaction.objectStore('punches').add({
         username: ME.username,
         date: today,
         time: time,
@@ -969,31 +975,91 @@ function savePunchOffline(time) {
         deviceId: DEV_ID,
         timestamp: Date.now()
     });
-    LS.set('sync_queue', q);
 
-    // تحديث الواجهة
+    // 2. طلب المزامنة في الخلفية من المتصفح
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+        navigator.serviceWorker.ready.then(reg => {
+            return reg.sync.register('sync-punches');
+        }).then(() => {
+            console.log('تم جدولة المزامنة في الخلفية');
+        }).catch(() => {
+            // في حال فشل الجدولة (مثل متصفحات قديمة) سنحاول المزامنة العادية
+            if (navigator.onLine) syncOfflinePunches();
+        });
+    }
+
+    // 3. تحديث واجهة الموظف فوراً (للعرض فقط)
+    la[today]._offline = true;
+    LS.set('att_' + ME.username, la);
     renderEmpStatusBar(la[today]);
-    updateSyncBanner();
     
-    // إظهار تأكيد للمدير
-    const label = type === 'in' ? 'تم تسجيل حضور' : 'تم تسجيل انصراف';
-    showPunchConfirm('offline', label, time, 'أرِ هذه الشاشة للمدير (تم الحفظ أوفلاين)');
-    
-    if (navigator.vibrate) navigator.vibrate(200);
-    if (isOnline) syncOfflinePunches();
+    showPunchConfirm('offline', 
+        type === 'in' ? 'تم تسجيل حضور' : 'تم تسجيل انصراف', 
+        time, 
+        'سيتم الرفع تلقائياً بمجرد فتح الإنترنت (حتى لو التطبيق مغلق)'
+    );
 }
 function getTodayStr(){return new Date().toISOString().split('T')[0];}
 
-function savePunchOffline(type,time){
-    const today=getTodayStr();
-    let la=getLocalAttendance(ME.username);if(!la[today])la[today]={status:'Present',date:today};
-    if(type==='in'){la[today].clockIn=time;la[today].status='Present';}else{la[today].clockOut=time;}
-    la[today]._offline=true;LS.set('att_'+ME.username,la);
-    let q=LS.get('sync_queue',[]);q.push({username:ME.username,date:today,time:time,type:type,deviceId:DEV_ID,timestamp:Date.now()});LS.set('sync_queue',q);
-    renderEmpStatusLocal();renderWeekCalendar();updateSyncBanner();
-    const label=type==='in'?'حضور':'انصراف';
-    showPunchConfirm('offline',`تم تسجيل ${label}`,time,'تم الحفظ بنجاح (سيتم الرفع فور توفر إنترنت)');
-    if(navigator.onLine)syncOfflinePunches();
+// دالة لفتح قاعدة البيانات المحلية من الصفحة الرئيسية
+function openLocalDB() {
+    return new Promise((resolve) => {
+        const request = indexedDB.open("ShamaaOfflineDB", 1);
+        request.onsuccess = (e) => resolve(e.target.result);
+    });
+}
+
+async function savePunchOffline(time) {
+    const today = getTodayStr();
+    let la = getLocalAttendance(ME.username);
+    if (!la[today]) la[today] = { date: today, status: 'Present' };
+
+    let type = '';
+    if (!la[today].clockIn) {
+        la[today].clockIn = time;
+        type = 'in';
+    } else if (!la[today].clockOut) {
+        la[today].clockOut = time;
+        type = 'out';
+    } else {
+        toast('مسجل بالفعل اليوم', 'warn');
+        return;
+    }
+
+    // 1. حفظ في indexedDB للمزامنة في الخلفية
+    const dbLocal = await openLocalDB();
+    const transaction = dbLocal.transaction('punches', 'readwrite');
+    transaction.objectStore('punches').add({
+        username: ME.username,
+        date: today,
+        time: time,
+        type: type,
+        deviceId: DEV_ID,
+        timestamp: Date.now()
+    });
+
+    // 2. طلب المزامنة في الخلفية من المتصفح
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+        navigator.serviceWorker.ready.then(reg => {
+            return reg.sync.register('sync-punches');
+        }).then(() => {
+            console.log('تم جدولة المزامنة في الخلفية');
+        }).catch(() => {
+            // في حال فشل الجدولة (مثل متصفحات قديمة) سنحاول المزامنة العادية
+            if (navigator.onLine) syncOfflinePunches();
+        });
+    }
+
+    // 3. تحديث واجهة الموظف فوراً (للعرض فقط)
+    la[today]._offline = true;
+    LS.set('att_' + ME.username, la);
+    renderEmpStatusBar(la[today]);
+    
+    showPunchConfirm('offline', 
+        type === 'in' ? 'تم تسجيل حضور' : 'تم تسجيل انصراف', 
+        time, 
+        'سيتم الرفع تلقائياً بمجرد فتح الإنترنت (حتى لو التطبيق مغلق)'
+    );
 }
 
 function showPunchConfirm(type,title,time,sub){
