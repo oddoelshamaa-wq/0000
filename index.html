@@ -625,40 +625,75 @@ function getWeekDates(){
     for(let i=0;i<7;i++){const dd=new Date(sat);dd.setDate(sat.getDate()+i);days.push({name:DAY_NAMES[i],date:dd,str:dd.toISOString().split('T')[0],isToday:dd.toDateString()===new Date().toDateString(),num:dd.getDate(),month:MONTH_NAMES[dd.getMonth()],dayIdx:i});}
     return days;
 }
-function navigateWeek(dir){weekOffset+=dir;renderWeekCalendar();renderEmpSchedule();}
-function resetWeekView(){weekOffset=0;renderWeekCalendar();renderEmpSchedule();}
-
+function navigateWeek(dir){
+    weekOffset += dir;
+    renderWeekCalendar();
+    renderEmpSchedule();
+    renderShiftsTable(); // أضف هذا السطر لكي يتحدث الجدول عند الضغط على الأسهم
+}function resetWeekView(){
+    weekOffset = 0;
+    renderWeekCalendar();
+    renderEmpSchedule();
+    renderShiftsTable(); // أضف هذا السطر لكي يعود الجدول للأسبوع الحالي
+}
 function renderWeekCalendar(){
-    const days=getWeekDates();const todayInfo=days.find(d=>d.isToday);
-    const dayNum=todayInfo?todayInfo.dayIdx+1:0;
-    const sD=days[0],eD=days[6];
-    const rangeText=`من <span>${sD.num} ${sD.month}</span> إلى <span>${eD.num} ${eD.month} ${eD.date.getFullYear()}</span>`;
-    const counterText=dayNum>0?`يوم ${todayInfo.name} - ${dayNum}/7`:'';
-    let daysHTML='';
-    days.forEach(d=>{
-        const isPast=d.date<new Date(new Date().setHours(0,0,0,0))&&!d.isToday;
-        let st='';
-        if(ME&&ME.role!=='admin'){
-            let att=null;
-            if(allUsers[ME.username]&&allUsers[ME.username].attendance&&allUsers[ME.username].attendance[d.str]){att=allUsers[ME.username].attendance[d.str];}
-            else{const la=getLocalAttendance(ME.username);att=la[d.str]||null;}
+    const days = getWeekDates();
+    const todayInfo = days.find(d => d.isToday);
+    const dayNum = todayInfo ? todayInfo.dayIdx + 1 : 0;
+    const sD = days[0], eD = days[6];
+    const rangeText = `من <span>${sD.num} ${sD.month}</span> إلى <span>${eD.num} ${eD.month} ${eD.date.getFullYear()}</span>`;
+    const counterText = dayNum > 0 ? `يوم ${todayInfo.name} - ${dayNum}/7` : '';
+    
+    let daysHTML = '';
+    days.forEach(d => {
+        const isPast = d.date < new Date(new Date().setHours(0,0,0,0)) && !d.isToday;
+        
+        // --- الجزء اللي ضفناه عشان نظهر التاريخ 06/06 ---
+        const dayFormatted = String(d.date.getDate()).padStart(2, '0');
+        const monthFormatted = String(d.date.getMonth() + 1).padStart(2, '0');
+        const fullDateStr = `${dayFormatted}/${monthFormatted}`;
+        // ----------------------------------------------
+
+        let st = '';
+        if(ME && ME.role !== 'admin'){
+            let att = null;
+            if(allUsers[ME.username] && allUsers[ME.username].attendance && allUsers[ME.username].attendance[d.str]){
+                att = allUsers[ME.username].attendance[d.str];
+            } else {
+                const la = getLocalAttendance(ME.username);
+                att = la[d.str] || null;
+            }
             if(att){
-                if(att.status==='Present'){st=att._offline?`<div class="w-day-status offline"><i class="fa-solid fa-wifi-slash"></i></div>`:`<div class="w-day-status present"><i class="fa-solid fa-check"></i></div>`;}
-                else{st=`<div class="w-day-status absent"><i class="fa-solid fa-xmark"></i></div>`;}
-            }else if(isPast){st=`<div class="w-day-status absent">--</div>`;}
-            else{st=`<div class="w-day-status pending">--</div>`;}
+                if(att.status === 'Present'){
+                    st = att._offline ? `<div class="w-day-status offline"><i class="fa-solid fa-wifi-slash"></i></div>` : `<div class="w-day-status present"><i class="fa-solid fa-check"></i></div>`;
+                } else {
+                    st = `<div class="w-day-status absent"><i class="fa-solid fa-xmark"></i></div>`;
+                }
+            } else if(isPast) {
+                st = `<div class="w-day-status absent">--</div>`;
+            } else {
+                st = `<div class="w-day-status pending">--</div>`;
+            }
         }
-        daysHTML+=`<div class="w-day ${d.isToday?'is-today':''} ${isPast?'is-past':''}"><div class="w-day-name">${d.name}</div><div class="w-day-num">${d.num}</div>${st}</div>`;
+        
+        // هنا عدلنا الـ HTML عشان يعرض fullDateStr بدل d.num وصغرنا الخط شوية
+        daysHTML += `
+            <div class="w-day ${d.isToday ? 'is-today' : ''} ${isPast ? 'is-past' : ''}">
+                <div class="w-day-name">${d.name}</div>
+                <div class="w-day-num" style="font-size: 0.9rem; margin-top: 5px;">${fullDateStr}</div>
+                ${st}
+            </div>`;
     });
-    document.getElementById('weekCard').innerHTML=`
+
+    document.getElementById('weekCard').innerHTML = `
         <div class="week-header">
             <div class="week-nav">
                 <button class="week-nav-btn" onclick="navigateWeek(-1)"><i class="fa-solid fa-chevron-right"></i></button>
                 <div class="week-range"><i class="fa-regular fa-calendar" style="margin-left:6px;"></i>${rangeText}</div>
                 <button class="week-nav-btn" onclick="navigateWeek(1)"><i class="fa-solid fa-chevron-left"></i></button>
-                ${weekOffset!==0?`<button class="week-nav-btn" onclick="resetWeekView()" style="width:auto;padding:0 12px;font-size:0.75rem;">هذا الأسبوع</button>`:''}
+                ${weekOffset !== 0 ? `<button class="week-nav-btn" onclick="resetWeekView()" style="width:auto;padding:0 12px;font-size:0.75rem;">هذا الأسبوع</button>` : ''}
             </div>
-            ${counterText?`<div class="week-day-counter">${counterText}</div>`:''}
+            ${counterText ? `<div class="week-day-counter">${counterText}</div>` : ''}
         </div>
         <div class="week-days-row">${daysHTML}</div>`;
 }
@@ -1001,15 +1036,57 @@ function fillUserSelects(){const s=document.getElementById('shUser');s.innerHTML
 function fillReportEmpFilter(){const s=document.getElementById('repEmpFilter');s.innerHTML='<option value="all">كل الموظفين</option>';Object.keys(allUsers).forEach(u=>{if(!ADMINS.includes(u))s.innerHTML+=`<option value="${u}">${allUsers[u].realName||u}</option>`;});}
 function fillManualBindSelect(){const s=document.getElementById('manualBindUser');s.innerHTML='';Object.keys(allUsers).forEach(u=>{if(ADMINS.includes(u))return;const user=allUsers[u]||{};const dev=user.approvedDevice;const st=dev?` (${dev})`:(user.pendingDevice?' (معلق)':'');s.innerHTML+=`<option value="${u}">${user.realName||u}${st}</option>`;});}
 function toggleShiftTimes(){document.getElementById('shiftTimesRow').style.display=document.getElementById('shStatus').value==='work'?'flex':'none';}
-function saveShift(){
-    const u=document.getElementById('shUser').value,day=document.getElementById('shDay').value,st=document.getElementById('shStatus').value;
-    const wk=weekKey(TODAY);const val=st==='work'?`${document.getElementById('shIn').value} - ${document.getElementById('shOut').value}`:st;
-    db.ref(`schedules/${u}/${wk}/${day}`).set(val).then(()=>toast('تم الحفظ','success')).catch(()=>toast('خطأ','error'));
+function saveShift() {
+    const u = document.getElementById('shUser').value;
+    const day = document.getElementById('shDay').value;
+    const st = document.getElementById('shStatus').value;
+    
+    // التعديل هنا: هنجيب تاريخ أول يوم في الأسبوع المعروض حالياً
+    const currentDisplayedDates = getWeekDates();
+    const wk = weekKey(currentDisplayedDates[0].str); 
+    
+    const val = st === 'work' ? `${document.getElementById('shIn').value} - ${document.getElementById('shOut').value}` : st;
+    
+    db.ref(`schedules/${u}/${wk}/${day}`).set(val).then(() => {
+        toast('تم حفظ المناوبة للأسبوع المختار', 'success');
+        renderShiftsTable(); // تحديث الجدول فوراً
+    }).catch(() => toast('خطأ في الحفظ', 'error'));
 }
-function renderShiftsTable(){
-    const tb=document.getElementById('shiftsBody');if(!tb)return;tb.innerHTML='';const wk=weekKey(TODAY);
-    Object.keys(allUsers).forEach(u=>{if(ADMINS.includes(u))return;const sc=allSched[u]&&allSched[u][wk]?allSched[u][wk]:{};
-        let row=`<tr><td>${allUsers[u].realName||u}</td>`;for(let i=0;i<7;i++){const v=sc[i]||'--';const cls=(v==='Off'||v==='Annual Leave'||v==='Sick Leave')?'badge-wait':'';row+=`<td>${cls?`<span class="badge ${cls}">${v}</span>`:v}</td>`;}tb.innerHTML+=row+'</tr>';});
+function renderShiftsTable() {
+    const tb = document.getElementById('shiftsBody');
+    if (!tb) return;
+    
+    // أولاً: الوصول لسطر العناوين في الجدول
+    const theadRow = document.querySelector('#tabShifts thead tr');
+    
+    // ثانياً: جلب تواريخ الأسبوع الحالي (التي تعتمد على weekOffset)
+    const dates = getWeekDates(); 
+    
+    // ثالثاً: تحديث عناوين الجدول (الهيدر) بالتواريخ
+    let headerHtml = '<th>الموظف</th>';
+    dates.forEach(d => {
+        const dayFormatted = String(d.date.getDate()).padStart(2, '0');
+        const monthFormatted = String(d.date.getMonth() + 1).padStart(2, '0');
+        // هنا بنحط اسم اليوم وتحته التاريخ بخط أصغر شوية
+        headerHtml += `<th>${d.name}<div style="font-size:0.7rem; font-weight:normal; opacity:0.8; margin-top:2px;">${dayFormatted}/${monthFormatted}</div></th>`;
+    });
+    if (theadRow) theadRow.innerHTML = headerHtml;
+
+    // رابعاً: بناء جسم الجدول (البيانات)
+    tb.innerHTML = '';
+    const wk = weekKey(dates[0].str); // نستخدم تاريخ السبت الخاص بالأسبوع المعروض
+    
+    Object.keys(allUsers).forEach(u => {
+        if (ADMINS.includes(u)) return;
+        const sc = allSched[u] && allSched[u][wk] ? allSched[u][wk] : {};
+        let row = `<tr><td style="text-align:right; font-weight:700;">${allUsers[u].realName || u}</td>`;
+        for (let i = 0; i < 7; i++) {
+            const v = sc[i] || '--';
+            const cls = (v === 'Off' || v === 'Annual Leave' || v === 'Sick Leave') ? 'badge-wait' : '';
+            row += `<td>${cls ? `<span class="badge ${cls}">${v}</span>` : v}</td>`;
+        }
+        tb.innerHTML += row + '</tr>';
+    });
 }
 
 // ===== مودال التصحيح والتبويبات =====
