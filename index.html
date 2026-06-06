@@ -694,103 +694,61 @@ function generateEmpQR(containerId,username,realName){
     try{new QRCode(c,{text:data,width:180,height:180,colorDark:"#0f172a",colorLight:"#ffffff"});}catch(e){}
 }
 
-function generateQR() {
-    const container = document.getElementById('qrcode');
-    if (!container) return;
-
-    const update = () => {
-        const now = new Date();
-        // تنسيق: SHAMAA*DDMMYY*Sequence
-        // السيكوينس يتغير كل 15 ثانية بناءً على وقت الجهاز
-        const datePart = String(now.getDate()).padStart(2, '0') + 
-                         String(now.getMonth() + 1).padStart(2, '0') + 
-                         String(now.getFullYear()).slice(-2);
-        const timeSeq = Math.floor(Date.now() / 15000); 
-        const dynamicCode = `SHAMAA*${datePart}*${timeSeq}`;
-
-        container.innerHTML = '';
-        new QRCode(container, {
-            text: dynamicCode,
-            width: 220,
-            height: 220,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.M
-        });
-        qrSecondsLeft = 15;
+function generateQR(){
+    const container=document.getElementById('qrcode');if(!container)return;
+    const update=()=>{
+        const now=new Date();
+        const datePart=String(now.getDate()).padStart(2,'0')+String(now.getMonth()+1).padStart(2,'0')+String(now.getFullYear()).slice(-2);
+        const timeSeq=Math.floor(Date.now()/15000);
+        const dynamicCode=`SHAMAA*${datePart}*${timeSeq}`;
+        container.innerHTML='';
+        new QRCode(container,{text:dynamicCode,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
+        qrSecondsLeft=15;
     };
-
     update();
-    if (qrInterval) clearInterval(qrInterval);
-    if (qrCountdownInterval) clearInterval(qrCountdownInterval);
-    
-    qrInterval = setInterval(update, 15000);
-    qrCountdownInterval = setInterval(() => {
+    if(qrInterval)clearInterval(qrInterval);
+    if(qrCountdownInterval)clearInterval(qrCountdownInterval);
+    qrInterval=setInterval(update,15000);
+    // عد تنازلي مرئي
+    qrCountdownInterval=setInterval(()=>{
         qrSecondsLeft--;
-        const el = document.getElementById('qrCountdown');
-        if (el) {
-            el.textContent = qrSecondsLeft;
-            el.style.color = qrSecondsLeft <= 5 ? 'var(--danger)' : 'var(--accent)';
-        }
-        if (qrSecondsLeft <= 0) qrSecondsLeft = 15;
-    }, 1000);
+        if(qrSecondsLeft<0)qrSecondsLeft=15;
+        const el=document.getElementById('qrCountdown');
+        if(el){el.textContent=qrSecondsLeft;el.style.borderColor=qrSecondsLeft<=5?'var(--danger)':'var(--accent)';el.style.color=qrSecondsLeft<=5?'var(--danger)':'var(--accent)';}
+    },1000);
 }
 
 // ===== تسجيل الدخول =====
-function doLogin() {
-    const u = document.getElementById('loginUser').value.trim().toLowerCase();
-    const p = document.getElementById('loginPass').value.trim();
-    if (!u || !p) { toast('أدخل اسم المستخدم وكلمة المرور', 'warn'); return; }
+function doLogin(){
+    
+    const u=document.getElementById('loginUser').value.trim().toLowerCase();
+    const p=document.getElementById('loginPass').value.trim();
+    if(!u||!p){toast('أدخل اسم المستخدم وكلمة المرور','warn');return;}
 
-    // محاولة جلب البيانات من التخزين المحلي أولاً لسرعة الدخول أوفلاين
-    const lc = getLocalCredentials(u);
-
-    if (isOnline && firebaseReady) {
-        // إذا كان هناك إنترنت، نتحقق من القاعدة ونحدث البيانات المحلية
-        db.ref(`users/${u}`).once('value', snap => {
-            const userData = snap.val();
-            if (!userData) { toast('اسم المستخدم غير موجود', 'error'); return; }
-            if (userData.password !== p) { toast('كلمة المرور غير صحيحة', 'error'); return; }
-            
-            ME = { username: u, ...userData };
-            ME.role = ADMINS.includes(u) ? 'admin' : 'employee';
-            saveLocalCredentials(u, userData);
-            addLocalUsername(u);
-            localStorage.setItem('sh_active_user', u); // لحفظ جلسة الدخول
-            
-            proceedToDashboard();
-        });
-    } else if (lc) {
-        // وضع الأوفلاين
-        if (lc.password === p) {
-            ME = { username: u, ...lc };
-            ME.role = ADMINS.includes(u) ? 'admin' : 'employee';
-            localStorage.setItem('sh_active_user', u);
-            toast('تم الدخول في وضع الأوفلاين', 'info');
-            proceedToDashboard();
-        } else {
-            toast('كلمة المرور غير صحيحة (أوفلاين)', 'error');
-        }
-    } else {
-        toast('يجب الاتصال بالإنترنت لأول مرة فقط لتفعيل الحساب', 'error');
-    }
-}
-
-function proceedToDashboard() {
-    if (ME.role === 'admin') {
+    if(isOnline&&firebaseReady){
+        if(!allUsers[u]){toast('اسم المستخدم غير موجود','error');return;}
+        if(allUsers[u].password!==p){toast('كلمة المرور غير صحيحة','error');return;}
+        ME={username:u,...allUsers[u]};ME.role=ADMINS.includes(u)?'admin':'employee';
+        saveLocalCredentials(u,allUsers[u]);addLocalUsername(u);
+        if(ME.role!=='admin')syncLocalAttToFirebase(u);
+        if(ME.role==='admin'){enterDashboard();return;}
+        const approved=ME.approvedDevice;
+        if(approved&&approved===DEV_ID){enterDashboard();}
+        else if(approved&&approved!==DEV_ID){document.getElementById('rejDevId').textContent=DEV_ID;showScreen('screenRejected');}
+        else{showBindScreen(!!ME.pendingDevice);}
+    }else{
+        const lc=getLocalCredentials(u);
+        if(!lc){toast('لازم تفتح نت أول مرة بس عشان تسجل دخول','error');return;}
+        if(lc.password!==p){toast('كلمة المرور غلط (أوفلاين)','error');return;}
+        if(ADMINS.includes(u)){toast('المدير لازم يكون متصل بالنت','error');return;}
+        ME={username:u,realName:lc.realName,password:lc.password,role:lc.role,approvedDevice:lc.approvedDevice,_offlineMode:true};
+        if(ME.approvedDevice&&ME.approvedDevice!==DEV_ID){document.getElementById('rejDevId').textContent=DEV_ID;showScreen('screenRejected');return;}
+        if(!ME.approvedDevice){toast('الجهاز مش مربوط - لازم تربطه أول مرة بالنت','warn');return;}
+        toast('دخول أوفلاين - البصمات هتتحفظ محلياً','info');
         enterDashboard();
-    } else {
-        const approved = ME.approvedDevice;
-        if (approved && approved === DEV_ID) {
-            enterDashboard();
-        } else if (!approved) {
-            showBindScreen(!!ME.pendingDevice);
-        } else {
-            document.getElementById('rejDevId').textContent = DEV_ID;
-            showScreen('screenRejected');
-        }
     }
 }
+
 function doLogout(){
     ME=null;
     if(bindCheckTimer){clearInterval(bindCheckTimer);bindCheckTimer=null;}
@@ -911,154 +869,82 @@ function stopMainScanner(){
     title.textContent='صوّب QR المدير';title.style.color='var(--text)';
     desc.textContent='اضغط الزر ده وصرّب الكاميرا نحو الـ QR اللي على شاشة المدير عشان تسجل بصمتك';steps.classList.remove('hidden');isScanning=false;
 }
-function processScannedQR(text) {
-    if (!ME) return;
-    
-    const now = new Date();
-    const datePart = String(now.getDate()).padStart(2, '0') + 
-                     String(now.getMonth() + 1).padStart(2, '0') + 
-                     String(now.getFullYear()).slice(-2);
-    
-    const ct = Math.floor(Date.now() / 15000);
-    const pt = ct - 1; // السماح بفرق 15 ثانية لتفادي تأخير الكاميرا
-    const lt = ct + 1; // السماح بفرق 15 ثانية مستقبلاً
-
-    const v1 = `SHAMAA*${datePart}*${ct}`;
-    const v2 = `SHAMAA*${datePart}*${pt}`;
-    const v3 = `SHAMAA*${datePart}*${lt}`;
-
-    if (text === v1 || text === v2 || text === v3) {
-        const time = String(now.getHours()).padStart(2, '0') + ':' + 
-                     String(now.getMinutes()).padStart(2, '0');
-        
-        // تسجيل البصمة محلياً
-        savePunchOffline(time);
-    } else {
-        showPunchConfirm('error', 'فشل التحقق', '--:--', 'الكود غير صحيح أو وقت الهاتف غير مضبوط');
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-    }
-}
-
-// دالة لفتح قاعدة البيانات المحلية من الصفحة الرئيسية
-function openLocalDB() {
-    return new Promise((resolve) => {
-        const request = indexedDB.open("ShamaaOfflineDB", 1);
-        request.onsuccess = (e) => resolve(e.target.result);
-    });
-}
-
-async function savePunchOffline(time) {
-    const today = getTodayStr();
-    let la = getLocalAttendance(ME.username);
-    if (!la[today]) la[today] = { date: today, status: 'Present' };
-
-    let type = '';
-    if (!la[today].clockIn) {
-        la[today].clockIn = time;
-        type = 'in';
-    } else if (!la[today].clockOut) {
-        la[today].clockOut = time;
-        type = 'out';
-    } else {
-        toast('مسجل بالفعل اليوم', 'warn');
-        return;
-    }
-
-    // 1. حفظ في indexedDB للمزامنة في الخلفية
-    const dbLocal = await openLocalDB();
-    const transaction = dbLocal.transaction('punches', 'readwrite');
-    transaction.objectStore('punches').add({
-        username: ME.username,
-        date: today,
-        time: time,
-        type: type,
-        deviceId: DEV_ID,
-        timestamp: Date.now()
-    });
-
-    // 2. طلب المزامنة في الخلفية من المتصفح
-    if ('serviceWorker' in navigator && 'SyncManager' in window) {
-        navigator.serviceWorker.ready.then(reg => {
-            return reg.sync.register('sync-punches');
-        }).then(() => {
-            console.log('تم جدولة المزامنة في الخلفية');
-        }).catch(() => {
-            // في حال فشل الجدولة (مثل متصفحات قديمة) سنحاول المزامنة العادية
-            if (navigator.onLine) syncOfflinePunches();
-        });
-    }
-
-    // 3. تحديث واجهة الموظف فوراً (للعرض فقط)
-    la[today]._offline = true;
-    LS.set('att_' + ME.username, la);
-    renderEmpStatusBar(la[today]);
-    
-    showPunchConfirm('offline', 
-        type === 'in' ? 'تم تسجيل حضور' : 'تم تسجيل انصراف', 
-        time, 
-        'سيتم الرفع تلقائياً بمجرد فتح الإنترنت (حتى لو التطبيق مغلق)'
-    );
+function processScannedQR(text){
+    if(!ME)return toast('سجل دخولك أولاً','error');
+    const now=new Date();
+    const datePart=String(now.getDate()).padStart(2,'0')+String(now.getMonth()+1).padStart(2,'0')+String(now.getFullYear()).slice(-2);
+    const ct=Math.floor(Date.now()/15000),pt=ct-1;
+    const v1=`SHAMAA*${datePart}*${ct}`,v2=`SHAMAA*${datePart}*${pt}`;
+    if(text===v1||text===v2){
+        const time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+        const today=getTodayStr();
+        let la=getLocalAttendance(ME.username);let cd=la[today]||{};
+        if(!cd.clockIn){savePunchOffline('in',time);}
+        else if(!cd.clockOut){savePunchOffline('out',time);}
+        else{toast('أنت مسجل حضور وانصراف بالفعل اليوم','warn');if(navigator.vibrate)navigator.vibrate(200);}
+        stopMainScanner();
+    }else{toast('كود منتهي الصلاحية أو غير صحيح','error');if(navigator.vibrate)navigator.vibrate(200);}
 }
 function getTodayStr(){return new Date().toISOString().split('T')[0];}
 
-// دالة لفتح قاعدة البيانات المحلية من الصفحة الرئيسية
-function openLocalDB() {
-    return new Promise((resolve) => {
-        const request = indexedDB.open("ShamaaOfflineDB", 1);
-        request.onsuccess = (e) => resolve(e.target.result);
-    });
-}
+// إنشاء قاعدة البيانات المحلية عند بدء التطبيق
+const dbRequest = indexedDB.open("ShamaaOfflineDB", 1);
+dbRequest.onupgradeneeded = (e) => {
+    const db = e.target.result;
+    if (!db.objectStoreNames.contains('punches')) {
+        db.createObjectStore('punches', { keyPath: 'id', autoIncrement: true });
+    }
+};
 
 async function savePunchOffline(time) {
-    const today = getTodayStr();
-    let la = getLocalAttendance(ME.username);
-    if (!la[today]) la[today] = { date: today, status: 'Present' };
-
+    const today = TODAY_STR();
     let type = '';
-    if (!la[today].clockIn) {
-        la[today].clockIn = time;
-        type = 'in';
-    } else if (!la[today].clockOut) {
-        la[today].clockOut = time;
-        type = 'out';
-    } else {
-        toast('مسجل بالفعل اليوم', 'warn');
-        return;
-    }
+    
+    // فحص محلي سريع عشان نعرف ده دخول ولا خروج
+    let la = getLocalAttendance(ME.username);
+    if (!la[today]) { type = 'in'; } 
+    else if (!la[today].clockOut) { type = 'out'; } 
+    else { toast('مسجل بالفعل اليوم', 'warn'); return; }
 
-    // 1. حفظ في indexedDB للمزامنة في الخلفية
-    const dbLocal = await openLocalDB();
-    const transaction = dbLocal.transaction('punches', 'readwrite');
-    transaction.objectStore('punches').add({
+    const punchRecord = {
         username: ME.username,
         date: today,
         time: time,
         type: type,
-        deviceId: DEV_ID,
-        timestamp: Date.now()
+        deviceId: DEV_ID
+    };
+
+    // 1. حفظ في IndexedDB (القاعدة اللي السيرفس وركر بيشوفها)
+    const dbLocal = await new Promise(res => {
+        const req = indexedDB.open("ShamaaOfflineDB", 1);
+        req.onsuccess = () => res(req.result);
+        req.onupgradeneeded = (e) => e.target.result.createObjectStore('punches', { keyPath: 'id', autoIncrement: true });
     });
 
-    // 2. طلب المزامنة في الخلفية من المتصفح
+    const tx = dbLocal.transaction('punches', 'readwrite');
+    tx.objectStore('punches').add(punchRecord);
+
+    // 2. تحديث الشكل قدام الموظف فوراً
+    if(type === 'in') la[today] = {clockIn: time, status: 'Present', _offline: true};
+    else la[today].clockOut = time;
+    LS.set('att_' + ME.username, la);
+    renderEmpStatusBar(la[today]);
+
+    // 3. الأمر السحري: تسجيل مهمة مزامنة خلفية
     if ('serviceWorker' in navigator && 'SyncManager' in window) {
         navigator.serviceWorker.ready.then(reg => {
             return reg.sync.register('sync-punches');
         }).then(() => {
-            console.log('تم جدولة المزامنة في الخلفية');
-        }).catch(() => {
-            // في حال فشل الجدولة (مثل متصفحات قديمة) سنحاول المزامنة العادية
-            if (navigator.onLine) syncOfflinePunches();
+            console.log('تم جدولة الرفع التلقائي في الخلفية');
+        }).catch(err => {
+            console.log('المتصفح رفض المزامنة الخلفية، هيرفع لما يفتح التطبيق');
         });
     }
 
-    // 3. تحديث واجهة الموظف فوراً (للعرض فقط)
-    la[today]._offline = true;
-    LS.set('att_' + ME.username, la);
-    renderEmpStatusBar(la[today]);
-    
     showPunchConfirm('offline', 
         type === 'in' ? 'تم تسجيل حضور' : 'تم تسجيل انصراف', 
         time, 
-        'سيتم الرفع تلقائياً بمجرد فتح الإنترنت (حتى لو التطبيق مغلق)'
+        'سيتم الرفع تلقائياً فور توفر إنترنت (حتى لو التطبيق مغلق)'
     );
 }
 
@@ -1277,6 +1163,11 @@ function checkPersistentLogin() {
 window.addEventListener('load', () => {
     checkPersistentLogin();
 });
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist().then(persistent => {
+    if (persistent) console.log("تم تفعيل التخزين المستمر: البيانات لن تُحذف تلقائياً.");
+  });
+}
 </script>
 </body>
 </html>
