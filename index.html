@@ -350,6 +350,12 @@ table{min-width:500px}
 
         <!-- واجهة الموظف -->
         <div id="empView">
+<!-- كارت الموظف الثابت (بيفتح أوفلاين) -->
+<div id="offlineBadgeArea" style="text-align: center; background: var(--card); padding: 20px; border-radius: 20px; border: 2px solid var(--primary); margin-bottom: 20px;">
+    <div style="font-weight: 900; margin-bottom: 10px; color: var(--primary);">كارت البصمة الخاص بك</div>
+    <div id="staticQrContainer" style="background: #fff; padding: 15px; border-radius: 15px; display: inline-block;"></div>
+    <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-dim);">وجه هذا الكود لكاميرا المدير لتسجيل الحضور</div>
+</div>
             <!-- جدول المناوبات (فقط للموظف) -->
             <div class="emp-schedule-card" id="empScheduleCard">
                 <h4><i class="fa-solid fa-calendar-days"></i> جدول مناوباتك لهذا الأسبوع</h4>
@@ -377,6 +383,12 @@ table{min-width:500px}
 
         <!-- قسم الادمن -->
         <div id="adminSection" class="hidden" style="margin-top:10px;">
+            <!-- زر المدير الجديد (يظهر في شاشته) -->
+<div class="admin-fast-scan" style="margin-bottom: 20px;">
+    <button class="btn btn-success btn-full btn-lg" onclick="toggleStationMode()" style="height: 80px; border-radius: 15px;">
+        <i class="fa-solid fa-tower-broadcast" style="margin-left: 10px;"></i> فتح محطة استقبال البصمات
+    </button>
+</div>
             <div class="admin-qr-box">
                 <div style="font-weight:700;margin-bottom:12px;color:var(--accent);"><i class="fa-solid fa-shield-halved"></i> كود QR للبصمة (يتغير كل 15 ثانية)</div>
                 <div id="qrcode"></div>
@@ -1231,6 +1243,104 @@ function checkPersistentLogin() {
 window.addEventListener('load', () => {
     checkPersistentLogin();
 });
+// 1. وظيفة الموظف: توليد الكود وهو أوفلاين
+// --- الكود الموحد والمصحح ---
+
+// 1. بمجرد ما الموظف يفتح، الكود بتاعه يظهر فوراً (حتى لو أوفلاين)
+function renderStaticBadge() {
+    if(!ME || ME.role === 'admin') return;
+    const container = document.getElementById('staticQrContainer');
+    if(!container) return;
+    
+    container.innerHTML = '';
+    // كود الموظف الثابت (اسم المستخدم فقط)
+    const qrData = `SHAMAA_ID|${ME.username}|${ME.realName || ME.username}`;
+    
+    new QRCode(container, {
+        text: qrData,
+        width: 200,
+        height: 200,
+        colorDark: "#000000",
+        colorLight: "#ffffff"
+    });
+}
+
+// تشغيل عرض الكود فور دخول الموظف
+const originalEnterDashboard = enterDashboard;
+enterDashboard = function() {
+    originalEnterDashboard();
+    renderStaticBadge();
+};
+
+// 2. وظيفة المدير: المسح المستمر والسريع جداً
+let stationScanner = null;
+let lastScannedUser = "";
+let lastScanTime = 0;
+
+function toggleStationMode() {
+    const reader = document.getElementById('reader');
+    const scanSection = document.getElementById('scanSection');
+    
+    if (!stationScanner) {
+        scanSection.classList.remove('hidden');
+        reader.classList.remove('hidden');
+        stationScanner = new Html5Qrcode("reader");
+        
+        stationScanner.start(
+            { facingMode: "user" }, 
+            { fps: 25, qrbox: 300 }, // سرعة عالية جداً
+            (text) => {
+                handleContinuousScan(text);
+            }
+        );
+        toast("محطة الاستقبال جاهزة.. المسح مستمر", "success");
+    } else {
+        stationScanner.stop().then(() => {
+            stationScanner = null;
+            reader.classList.add('hidden');
+        });
+    }
+}
+
+function handleContinuousScan(text) {
+    const now = Date.now();
+    // منع تكرار مسح نفس الموظف في أقل من 10 ثواني (عشان ميسجلش دخول وخروج في لحظة)
+    if (text === lastScannedUser && now - lastScanTime < 10000) return;
+
+    const p = text.split('|');
+    if (p[0] === "SHAMAA_ID") {
+        const user = p[1];
+        const name = p[2];
+        
+        lastScannedUser = text;
+        lastScanTime = now;
+
+        const today = TODAY_STR();
+        const punchTime = new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
+
+        // التسجيل الفوري في قاعدة البيانات
+        db.ref(`users/${user}/attendance/${today}`).once('value').then(snap => {
+            const data = snap.val();
+            let upd = { date: today, status: 'Present' };
+            
+            if (!data || !data.clockIn) {
+                upd.clockIn = punchTime;
+                toast(`مرحباً ${name}: تسجيل دخول`, "success");
+            } else if (!data.clockOut) {
+                upd.clockOut = punchTime;
+                toast(`وداعاً ${name}: تسجيل خروج`, "info");
+            } else {
+                return; // مسجل حضور وانصراف خلاص
+            }
+
+            db.ref(`users/${user}/attendance/${today}`).update(upd).then(() => {
+                // صوت "تيت" قوي
+                new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3').play();
+                if (navigator.vibrate) navigator.vibrate(200);
+            });
+        });
+    }
+}
 </script>
 </body>
 </html>
