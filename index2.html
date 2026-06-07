@@ -694,25 +694,116 @@ function stopStationScanner(){
     }
 }
 
-function toggleStationMode(){
-    const reader=document.getElementById('reader');
-    const btn=document.getElementById('stationModeBtn');
+// وظيفة تبديل وضع المحطة (فتح/إغلاق الكاميرا)
+function toggleStationMode() {
+    const reader = document.getElementById('reader');
+    const btn = document.getElementById('stationModeBtn');
     
-    if(!stationScanner){
-        stopMainScanner(); // نتأكد إن سكانر الموظف مقفول
-        
-        reader.classList.remove('hidden');
-        stationScanner=new Html5Qrcode("reader");
-        
-        stationScanner.start({facingMode:"environment"},{fps:25,qrbox:{width:250,height:250}},(text)=>{handleContinuousScan(text);}).then(()=>{
-            toast("محطة الاستقبال جاهزة.. وجّه الكاميرا لكود الموظف","success");
-            if(btn){btn.innerHTML='<i class="fa-solid fa-stop" style="margin-left: 10px;"></i> إغلاق المحطة';btn.classList.remove('btn-success');btn.classList.add('btn-danger');}
-        }).catch((err)=>{
-            toast("تعذر فتح الكاميرا","error");stationScanner=null;
-        });
-    }else{
+    // إذا كان السكانر مفتوحاً بالفعل، نقوم بإغلاقه
+    if (stationScanner) {
         stopStationScanner();
+        return;
     }
+
+    // إغلاق أي سكانر آخر مفتوح لتجنب التعارض
+    stopMainScanner(); 
+
+    // إظهار حاوية الكاميرا
+    reader.classList.remove('hidden');
+    
+    // تهيئة السكانر الجديد
+    stationScanner = new Html5Qrcode("reader");
+    
+    const config = { 
+        fps: 20, // سرعة المسح في الثانية
+        qrbox: { width: 280, height: 280 }, // حجم مربع المسح
+        aspectRatio: 1.0 
+    };
+
+    // بدء تشغيل الكاميرا الخلفية
+    stationScanner.start(
+        { facingMode: "environment" }, 
+        config, 
+        (text) => {
+            // عند نجاح القراءة
+            handleContinuousScan(text);
+        }
+    ).then(() => {
+        toast("المحطة جاهزة.. وجّه الكاميرا لكود الموظف", "success");
+        // تغيير شكل الزر للإشارة أنه قيد العمل
+        if (btn) {
+            btn.innerHTML = '<i class="fa-solid fa-stop" style="margin-left: 10px;"></i> إيقاف محطة الاستقبال';
+            btn.classList.replace('btn-success', 'btn-danger');
+        }
+        // التمرير تلقائياً للكاميرا لسهولة الرؤية
+        reader.scrollIntoView({ behavior: 'smooth' });
+    }).catch((err) => {
+        console.error(err);
+        toast("تعذر فتح الكاميرا، تأكد من إعطاء الصلاحية", "error");
+        reader.classList.add('hidden');
+        stationScanner = null;
+    });
+}
+
+// وظيفة التعامل مع الكود المقروء من الموظف
+function handleContinuousScan(text) {
+    const now = Date.now();
+    
+    // منع التكرار: إذا تم مسح نفس الكود في أقل من 5 ثوانٍ، تجاهله
+    if (text === lastScannedUser && (now - lastScanTime < 5000)) return;
+    
+    // تحليل البيانات (نتوقع تنسيق: SHAMAA_ID|username|realName)
+    const parts = text.split('|');
+    
+    if (parts[0] === "SHAMAA_ID") {
+        const username = parts[1];
+        const realName = parts[2];
+        
+        lastScannedUser = text;
+        lastScanTime = now;
+        
+        const today = TODAY_STR();
+        const punchTime = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+        // جلب حالة الموظف من قاعدة البيانات لتحديد هل هو دخول أم خروج
+        db.ref(`users/${username}/attendance/${today}`).once('value').then(snap => {
+            const data = snap.val();
+            let updateData = { date: today, status: 'Present' };
+            let actionType = "";
+
+            if (!data || !data.clockIn) {
+                updateData.clockIn = punchTime;
+                actionType = "حضور";
+            } else if (!data.clockOut) {
+                updateData.clockOut = punchTime;
+                actionType = "انصراف";
+            } else {
+                toast(`الموظف ${realName} مسجل بالفعل اليوم`, "warn");
+                return;
+            }
+
+            // تحديث قاعدة البيانات
+            db.ref(`users/${username}/attendance/${today}`).update(updateData).then(() => {
+                // إشعار نجاح (صوت + اهتزاز + رسالة)
+                playSuccessSound();
+                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                toast(`تم تسجيل ${actionType} لـ ${realName} بنجاح`, "success");
+                
+                renderAttTable(); // تحديث الجدول أمام المدير
+            });
+        });
+    } else {
+        // إذا كان الكود الممسوح هو كود ربط جهاز جديد
+        if (parts[0] === "SHAMAA_EMP") {
+            handleEmpScan(text); 
+        }
+    }
+}
+
+// دالة مساعدة لتشغيل صوت عند نجاح البصمة
+function playSuccessSound() {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    audio.play().catch(() => {});
 }
 
 function handleContinuousScan(text){
