@@ -279,7 +279,6 @@ table{min-width:500px}
 </div>
 
 <div class="container">
-    <!-- تسجيل الدخول -->
     <div id="screenLogin" class="screen">
         <div class="glass" style="max-width:420px;margin:60px auto;">
             <div style="text-align:center;margin-bottom:30px;">
@@ -303,7 +302,6 @@ table{min-width:500px}
         </div>
     </div>
 
-    <!-- شاشة ربط الجهاز -->
     <div id="screenBind" class="screen hidden">
         <div class="glass" style="max-width:500px;margin:40px auto;">
             <div class="bind-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
@@ -322,7 +320,6 @@ table{min-width:500px}
         </div>
     </div>
 
-    <!-- جهاز مرفوض -->
     <div id="screenRejected" class="screen hidden">
         <div class="glass" style="max-width:460px;margin:60px auto;text-align:center;">
             <div style="width:80px;height:80px;border-radius:50%;background:rgba(244,63,94,0.1);border:2px solid var(--danger);display:inline-flex;align-items:center;justify-content:center;font-size:2rem;color:var(--danger);margin-bottom:20px;"><i class="fa-solid fa-ban"></i></div>
@@ -334,7 +331,6 @@ table{min-width:500px}
         </div>
     </div>
 
-    <!-- لوحة التحكم -->
     <div id="screenDash" class="screen hidden">
         <div class="dash-header">
             <div class="user-greet">أهلاً <span id="dashName"></span></div>
@@ -348,7 +344,6 @@ table{min-width:500px}
         <div id="dashNetBar"></div>
         <div class="week-card" id="weekCard"></div>
 
-        <!-- واجهة الموظف -->
         <div id="empView">
             <div id="offlineBadgeArea">
                 <div style="font-weight: 900; margin-bottom: 10px; color: var(--primary);">كارت البصمة الخاص بك</div>
@@ -359,13 +354,11 @@ table{min-width:500px}
                 <h4><i class="fa-solid fa-calendar-days"></i> جدول مناوباتك لهذا الأسبوع</h4>
                 <div class="emp-schedule-grid" id="empScheduleGrid"></div>
             </div>
-
             <div class="status-bar" id="statusBar"></div>
             <div id="syncBanner" class="sync-banner hidden">
                 <i class="fa-solid fa-cloud-arrow-up"></i>
                 <span id="syncBannerText">لديك بصمة محفوظة (أوفلاين) سيتم إرسالها فور توفر إنترنت</span>
             </div>
-
             <div class="scan-section" id="scanSection">
                 <button class="scan-main-btn" id="scanMainBtn" onclick="toggleScanner()"><i class="fa-solid fa-camera"></i></button>
                 <div class="scan-title" id="scanTitle">صوّر QR المدير</div>
@@ -379,32 +372,26 @@ table{min-width:500px}
             </div>
         </div>
 
-        <!-- واجهة المدير -->
         <div id="adminSection" class="hidden">
             <div class="admin-fast-scan" style="margin-bottom: 20px;">
                 <button id="stationModeBtn" class="btn btn-success btn-full btn-lg" onclick="toggleStationMode()" style="height: 80px; border-radius: 15px;">
                     <i class="fa-solid fa-tower-broadcast" style="margin-left: 10px;"></i> فتح محطة استقبال البصمات للأوفلاين
                 </button>
                 <div id="stationReader" class="hidden"></div>
-                <div style="text-align: center; margin-top: 8px; color: var(--text-dim); font-size: 0.8rem;">
-                    وجّه الكاميرا لكود الموظف اللي معاهش نت عشان ترفع بصمته فوراً
-                </div>
+                <div style="text-align: center; margin-top: 8px; color: var(--text-dim); font-size: 0.8rem;">وجّه الكاميرا لكود الموظف اللي معاهش نت عشان ترفع بصمته فوراً</div>
             </div>
-
             <div class="admin-qr-box">
                 <div style="font-weight:700;margin-bottom:12px;color:var(--accent);"><i class="fa-solid fa-shield-halved"></i> كود QR للبصمة (يتغير كل 15 ثانية)</div>
                 <div id="qrcode"></div>
                 <div class="qr-countdown" id="qrCountdown">15</div>
                 <div class="qr-timer"><i class="fa-solid fa-rotate"></i> الكود بيتجدد تلقائياً</div>
             </div>
-
             <div class="tabs-nav">
                 <button class="tab-btn active" data-tab="tabAtt" onclick="switchTab(this)"><i class="fa-solid fa-table-list"></i> البصمة</button>
                 <button class="tab-btn" data-tab="tabShifts" onclick="switchTab(this)"><i class="fa-solid fa-calendar-days"></i> المناوبات</button>
                 <button class="tab-btn" data-tab="tabDevices" onclick="switchTab(this)"><i class="fa-solid fa-mobile-screen"></i> الأجهزة</button>
                 <button class="tab-btn" data-tab="tabReports" onclick="switchTab(this)"><i class="fa-solid fa-file-excel"></i> التقارير</button>
             </div>
-
             <div id="tabAtt" class="tab-panel active">
                 <div class="date-nav">
                     <button class="date-nav-btn" onclick="navAttDate(-1)"><i class="fa-solid fa-chevron-right"></i></button>
@@ -412,121 +399,43 @@ table{min-width:500px}
                     <button class="date-nav-btn" onclick="navAttDate(1)"><i class="fa-solid fa-chevron-left"></i></button>
                     <button class="today-btn" onclick="goToday()"><i class="fa-solid fa-calendar-day"></i> اليوم</button>
                 </div>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>الموظف</th><th>الحالة</th><th>الدخول</th><th>الخروج</th><th>مصدر</th><th>إجراء</th></tr></thead>
-                        <tbody id="attBody"></tbody>
-                    </table>
-                </div>
+                <div class="table-wrap"><table><thead><tr><th>الموظف</th><th>الحالة</th><th>الدخول</th><th>الخروج</th><th>مصدر</th><th>إجراء</th></tr></thead><tbody id="attBody"></tbody></table></div>
             </div>
-
             <div id="tabShifts" class="tab-panel">
                 <div class="shift-form">
                     <h4><i class="fa-solid fa-pen-to-square"></i> تعديل جدول المناوبات</h4>
-                    <div class="shift-grid">
-                        <div class="form-group" style="margin:0;"><label>الموظف</label><select id="shUser" class="form-input"></select></div>
-                        <div class="form-group" style="margin:0;">
-                            <label>اليوم</label>
-                            <select id="shDay" class="form-input">
-                                <option value="0">السبت</option><option value="1">الأحد</option><option value="2">الاثنين</option>
-                                <option value="3">الثلاثاء</option><option value="4">الأربعاء</option><option value="5">الخميس</option><option value="6">الجمعة</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="margin:0;">
-                            <label>الحالة</label>
-                            <select id="shStatus" class="form-input" onchange="toggleShiftTimes()">
-                                <option value="work">دوام</option><option value="Off">إجازة</option>
-                                <option value="Annual Leave">سنوية</option><option value="Sick Leave">مرضية</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="shift-times" id="shiftTimesRow">
-                        <div class="form-group" style="margin:0;"><label>وقت الدخول</label><input type="time" id="shIn" class="form-input" value="07:00"></div>
-                        <div class="form-group" style="margin:0;"><label>وقت الخروج</label><input type="time" id="shOut" class="form-input" value="15:00"></div>
-                    </div>
+                    <div class="shift-grid"><div class="form-group" style="margin:0;"><label>الموظف</label><select id="shUser" class="form-input"></select></div><div class="form-group" style="margin:0;"><label>اليوم</label><select id="shDay" class="form-input"><option value="0">السبت</option><option value="1">الأحد</option><option value="2">الاثنين</option><option value="3">الثلاثاء</option><option value="4">الأربعاء</option><option value="5">الخميس</option><option value="6">الجمعة</option></select></div><div class="form-group" style="margin:0;"><label>الحالة</label><select id="shStatus" class="form-input" onchange="toggleShiftTimes()"><option value="work">دوام</option><option value="Off">إجازة</option><option value="Annual Leave">سنوية</option><option value="Sick Leave">مرضية</option></select></div></div>
+                    <div class="shift-times" id="shiftTimesRow"><div class="form-group" style="margin:0;"><label>وقت الدخول</label><input type="time" id="shIn" class="form-input" value="07:00"></div><div class="form-group" style="margin:0;"><label>وقت الخروج</label><input type="time" id="shOut" class="form-input" value="15:00"></div></div>
                     <button class="btn btn-success" style="margin-top:14px;" onclick="saveShift()"><i class="fa-solid fa-floppy-disk"></i> حفظ</button>
                 </div>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>الموظف</th><th>سبت</th><th>أحد</th><th>اثنين</th><th>ثلاثاء</th><th>أربعاء</th><th>خميس</th><th>جمعة</th></tr></thead>
-                        <tbody id="shiftsBody"></tbody>
-                    </table>
-                </div>
+                <div class="table-wrap"><table><thead><tr><th>الموظف</th><th>سبت</th><th>أحد</th><th>اثنين</th><th>ثلاثاء</th><th>أربعاء</th><th>خميس</th><th>جمعة</th></tr></thead><tbody id="shiftsBody"></tbody></table></div>
             </div>
-
             <div id="tabDevices" class="tab-panel">
-                <div class="admin-scan-emp-box">
-                    <h4><i class="fa-solid fa-camera"></i> مسح QR الموظف للربط</h4>
-                    <p>وجّه الكاميرا نحو QR اللي على موبيل الموظف</p>
-                    <button class="scan-emp-btn-icon" onclick="startEmpScan()" aria-label="مسح QR موظف"><i class="fa-solid fa-qrcode"></i></button>
-                    <div id="empReader" class="hidden"></div>
-                    <div id="scanEmpResult"></div>
-                </div>
-                <div class="manual-bind-box">
-                    <h4><i class="fa-solid fa-wand-magic-sparkles"></i> ربط جهاز يدوياً</h4>
-                    <div class="manual-bind-form">
-                        <div class="form-group"><label>اختار الموظف</label><select id="manualBindUser" class="form-input"></select></div>
-                        <div class="form-group" style="flex:1.5;"><label>معرّف الجهاز</label><input type="text" id="manualBindDevId" class="form-input" placeholder="D-XXXXXXXX" style="font-family:'Courier New',monospace;"></div>
-                        <button class="btn btn-success btn-sm" onclick="manualBindDevice()" style="height:50px;white-space:nowrap;"><i class="fa-solid fa-link"></i> ربط</button>
-                    </div>
-                </div>
+                <div class="admin-scan-emp-box"><h4><i class="fa-solid fa-camera"></i> مسح QR الموظف للربط</h4><p>وجّه الكاميرا نحو QR اللي على موبيل الموظف</p><button class="scan-emp-btn-icon" onclick="startEmpScan()" aria-label="مسح QR موظف"><i class="fa-solid fa-qrcode"></i></button><div id="empReader" class="hidden"></div><div id="scanEmpResult"></div></div>
+                <div class="manual-bind-box"><h4><i class="fa-solid fa-wand-magic-sparkles"></i> ربط جهاز يدوياً</h4><div class="manual-bind-form"><div class="form-group"><label>اختار الموظف</label><select id="manualBindUser" class="form-input"></select></div><div class="form-group" style="flex:1.5;"><label>معرّف الجهاز</label><input type="text" id="manualBindDevId" class="form-input" placeholder="D-XXXXXXXX" style="font-family:'Courier New',monospace;"></div><button class="btn btn-success btn-sm" onclick="manualBindDevice()" style="height:50px;white-space:nowrap;"><i class="fa-solid fa-link"></i> ربط</button></div></div>
                 <div style="font-weight:700;margin-bottom:10px;color:var(--text-dim);font-size:0.9rem;"><i class="fa-solid fa-list"></i> حالة الأجهزة</div>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>الموظف</th><th>الجهاز المعتمد</th><th>طلب معلّق</th><th>الحالة</th><th>الإجراء</th></tr></thead>
-                        <tbody id="devBody"></tbody>
-                    </table>
-                </div>
+                <div class="table-wrap"><table><thead><tr><th>الموظف</th><th>الجهاز المعتمد</th><th>طلب معلّق</th><th>الحالة</th><th>الإجراء</th></tr></thead><tbody id="devBody"></tbody></table></div>
             </div>
-
             <div id="tabReports" class="tab-panel">
                 <div style="padding:18px;background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.2);border-radius:16px;margin-bottom:20px;">
                     <h4 style="color:var(--primary);margin-bottom:14px;font-size:1.05rem;"><i class="fa-solid fa-clipboard-check"></i> تقرير التزام بالشيفتات</h4>
-                    <div class="quick-btns">
-                        <button class="quick-btn active" onclick="setReportQuick('thisWeek',this)">هذا الأسبوع</button>
-                        <button class="quick-btn" onclick="setReportQuick('lastWeek',this)">الأسبوع اللي فات</button>
-                        <button class="quick-btn" onclick="setReportQuick('thisMonth',this)">هذا الشهر</button>
-                        <button class="quick-btn" onclick="setReportQuick('lastMonth',this)">الشهر اللي فات</button>
-                    </div>
-                    <div class="report-period">
-                        <div class="form-group"><label>من</label><input type="date" id="repFrom" class="form-input"></div>
-                        <div class="form-group"><label>إلى</label><input type="date" id="repTo" class="form-input"></div>
-                        <button class="btn btn-primary btn-sm" onclick="runShiftReport()" style="height:50px;"><i class="fa-solid fa-magnifying-glass"></i> عرض</button>
-                    </div>
-                    <div class="emp-filter-row">
-                        <div class="form-group" style="margin:0;flex:1;"><label>فلتر موظف</label><select id="repEmpFilter" class="form-input"><option value="all">كل الموظفين</option></select></div>
-                        <button class="btn btn-accent btn-sm" onclick="xlShiftReport()" style="height:50px;"><i class="fa-solid fa-file-excel"></i> Excel</button>
-                    </div>
-                    <div class="report-summary hidden" id="shiftSummary">
-                        <div class="report-summary-card rs-red"><div class="rs-label"><i class="fa-solid fa-circle-xmark"></i> غياب في وردية</div><div class="rs-value" id="sumAbsent">0</div></div>
-                        <div class="report-summary-card rs-amber"><div class="rs-label"><i class="fa-solid fa-calendar-xmark"></i> نزل في إجازة</div><div class="rs-value" id="sumOffDay">0</div></div>
-                        <div class="report-summary-card rs-blue"><div class="rs-label"><i class="fa-solid fa-clock-rotate-left"></i> تأخير</div><div class="rs-value" id="sumShiftChange">0</div></div>
-                    </div>
-                    <div class="table-wrap hidden" id="shiftReportTable" style="margin-top:14px;">
-                        <table>
-                            <thead><tr><th>الموظف</th><th>غياب في وردية</th><th>نزل في إجازة</th><th>تغيير شيفت</th><th>إجمالي</th><th>تفاصيل</th></tr></thead>
-                            <tbody id="shiftReportBody"></tbody>
-                        </table>
-                    </div>
+                    <div class="quick-btns"><button class="quick-btn active" onclick="setReportQuick('thisWeek',this)">هذا الأسبوع</button><button class="quick-btn" onclick="setReportQuick('lastWeek',this)">الأسبوع اللي فات</button><button class="quick-btn" onclick="setReportQuick('thisMonth',this)">هذا الشهر</button><button class="quick-btn" onclick="setReportQuick('lastMonth',this)">الشهر اللي فات</button></div>
+                    <div class="report-period"><div class="form-group"><label>من</label><input type="date" id="repFrom" class="form-input"></div><div class="form-group"><label>إلى</label><input type="date" id="repTo" class="form-input"></div><button class="btn btn-primary btn-sm" onclick="runShiftReport()" style="height:50px;"><i class="fa-solid fa-magnifying-glass"></i> عرض</button></div>
+                    <div class="emp-filter-row"><div class="form-group" style="margin:0;flex:1;"><label>فلتر موظف</label><select id="repEmpFilter" class="form-input"><option value="all">كل الموظفين</option></select></div><button class="btn btn-accent btn-sm" onclick="xlShiftReport()" style="height:50px;"><i class="fa-solid fa-file-excel"></i> Excel</button></div>
+                    <div class="report-summary hidden" id="shiftSummary"><div class="report-summary-card rs-red"><div class="rs-label"><i class="fa-solid fa-circle-xmark"></i> غياب في وردية</div><div class="rs-value" id="sumAbsent">0</div></div><div class="report-summary-card rs-amber"><div class="rs-label"><i class="fa-solid fa-calendar-xmark"></i> نزل في إجازة</div><div class="rs-value" id="sumOffDay">0</div></div><div class="report-summary-card rs-blue"><div class="rs-label"><i class="fa-solid fa-clock-rotate-left"></i> تأخير</div><div class="rs-value" id="sumShiftChange">0</div></div></div>
+                    <div class="table-wrap hidden" id="shiftReportTable" style="margin-top:14px;"><table><thead><tr><th>الموظف</th><th>غياب في وردية</th><th>نزل في إجازة</th><th>تغيير شيفت</th><th>إجمالي</th><th>تفاصيل</th></tr></thead><tbody id="shiftReportBody"></tbody></table></div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                    <button class="btn btn-success" onclick="xlAnalytics()"><i class="fa-solid fa-chart-pie"></i> تحليل أداء</button>
-                    <button class="btn btn-primary" onclick="xlDetailed()"><i class="fa-solid fa-list-check"></i> سجل تفصيلي</button>
-                    <button class="btn btn-danger" onclick="xlAbsences()"><i class="fa-solid fa-circle-xmark"></i> تقرير غياب</button>
-                    <button class="btn btn-accent" onclick="xlArchive()"><i class="fa-solid fa-box-archive"></i> أرشفة</button>
-                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><button class="btn btn-success" onclick="xlAnalytics()"><i class="fa-solid fa-chart-pie"></i> تحليل أداء</button><button class="btn btn-primary" onclick="xlDetailed()"><i class="fa-solid fa-list-check"></i> سجل تفصيلي</button><button class="btn btn-danger" onclick="xlAbsences()"><i class="fa-solid fa-circle-xmark"></i> تقرير غياب</button><button class="btn btn-accent" onclick="xlArchive()"><i class="fa-solid fa-box-archive"></i> أرشفة</button></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- المودالات -->
 <div id="corrModal" class="modal-overlay" role="dialog"><div class="modal-box"><h3><i class="fa-solid fa-pen-to-square"></i> تصحيح سجل الحضور</h3><div id="corrTarget" style="font-size:0.9rem;color:var(--text-dim);margin-bottom:16px;"></div><div class="form-group"><label>الحالة</label><select id="corrStatus" class="form-input"><option value="Present">حاضر</option><option value="Absent">غائب</option><option value="Sick Leave">مرضية</option><option value="Annual Leave">سنوية</option></select></div><div style="display:flex;gap:10px;"><div class="form-group" style="flex:1;"><label>وقت الدخول</label><input type="time" id="corrIn" class="form-input"></div><div class="form-group" style="flex:1;"><label>وقت الخروج</label><input type="time" id="corrOut" class="form-input"></div></div><div class="modal-actions"><button class="btn btn-success" onclick="saveCorrection()"><i class="fa-solid fa-check"></i> حفظ</button><button class="btn btn-ghost" onclick="closeCorrModal()"><i class="fa-solid fa-xmark"></i> إلغاء</button></div></div></div>
 <div id="shiftDetailModal" class="modal-overlay" role="dialog"><div class="modal-box"><h3 id="shiftDetailTitle"><i class="fa-solid fa-clipboard-list"></i> تفاصيل المخالفات</h3><div id="shiftDetailContent"></div><div class="modal-actions"><button class="btn btn-ghost btn-full" onclick="closeShiftDetail()"><i class="fa-solid fa-xmark"></i> إغلاق</button></div></div></div>
 <div id="empQrModalOverlay" class="modal-overlay" role="dialog"><div class="emp-qr-modal-box"><div class="eqm-name" id="eqmName">--</div><div class="eqm-user" id="eqmUser">@username</div><div id="empQrModal"></div><button class="btn btn-primary btn-full" style="margin-top:16px;" onclick="closeEmpQrModal()"><i class="fa-solid fa-xmark"></i> إغلاق</button></div></div>
 
 <script>
-/* ===== Firebase ===== */
 const FB_CFG={apiKey:"AIzaSyBojsAZ73wpf-4cD8TviULncyxIIOUO2qY",authDomain:"brak-nagaf.firebaseapp.com",projectId:"brak-nagaf",storageBucket:"brak-nagaf.firebasestorage.app",messagingSenderId:"149166416863",appId:"1:149166416863:web:e94fe392f868da07bbda6a",databaseURL:"https://brak-nagaf-default-rtdb.firebaseio.com/"};
 firebase.initializeApp(FB_CFG);
 const db=firebase.database();
@@ -559,9 +468,27 @@ function addLocalUsername(u){const l=getLocalUsernames();if(!l.includes(u)){l.pu
 function getLocalAttendance(u){return LS.get('att_'+u,{});}
 function saveLocalAttendance(u,date,data){const a=getLocalAttendance(u);a[date]=data;LS.set('att_'+u,a);}
 
+// ===== نظام توقيت السيرفر لتجنب غش الموظفين =====
+let serverTimeOffset = 0;
+async function syncServerTime() {
+    try {
+        const beforeCall = Date.now();
+        const response = await fetch('https://worldtimeapi.org/api/timezone/Africa/Cairo');
+        const data = await response.json();
+        const afterCall = Date.now();
+        const latency = (afterCall - beforeCall) / 2;
+        const serverTime = (data.unixtime * 1000) + latency;
+        serverTimeOffset = serverTime - afterCall;
+        LS.set('server_offset', serverTimeOffset);
+    } catch (e) {
+        serverTimeOffset = LS.get('server_offset', 0);
+    }
+}
+function getSecureTime() { return new Date(Date.now() + serverTimeOffset); }
+
 function updateNetUI(){
     isOnline=navigator.onLine;const lb=document.getElementById('loginNetBar');if(lb)lb.innerHTML=isOnline?'':`<div class="net-bar offline"><i class="fa-solid fa-wifi-slash"></i> غير متصل</div>`;const oi=document.getElementById('loginOfflineInfo');if(oi)oi.classList.toggle('hidden',isOnline||getLocalUsernames().length===0);const db2=document.getElementById('dashNetBar');if(db2)db2.innerHTML=isOnline?`<div class="net-bar online"><i class="fa-solid fa-wifi"></i> متصل</div>`:`<div class="net-bar offline"><i class="fa-solid fa-wifi-slash"></i> أوفلاين</div>`;const dot=document.getElementById('dashNetDot');if(dot){dot.style.background=isOnline?'var(--success)':'var(--off-color)';dot.style.boxShadow=isOnline?'0 0 8px var(--success-glow)':'0 0 8px var(--off-glow)';}updateSyncBanner();}
-window.addEventListener('online',()=>{updateNetUI();toast('عادت الشبكة!','success');setTimeout(syncOfflinePunches,1000);});
+window.addEventListener('online',()=>{updateNetUI();toast('عادت الشبكة!','success');setTimeout(syncOfflinePunches,1000);syncServerTime();});
 window.addEventListener('offline',()=>{updateNetUI();toast('فقدت الاتصال','warn');});
 
 function updateSyncBanner(){const b=document.getElementById('syncBanner');if(!b)return;const q=LS.get('sync_queue',[]);const t=document.getElementById('syncBannerText');if(q.length>0){b.classList.remove('hidden');t.textContent=`لديك (${q.length}) بصمة محفوظة محلياً`;}else{b.classList.add('hidden');}}
@@ -583,7 +510,7 @@ function generateEmpQR(containerId,username,realName){const data=`${EMP_QR_PREFI
 
 function generateQR(){const container=document.getElementById('qrcode');if(!container)return;const update=()=>{const now=new Date();const datePart=String(now.getDate()).padStart(2,'0')+String(now.getMonth()+1).padStart(2,'0')+String(now.getFullYear()).slice(-2);const timeSeq=Math.floor(Date.now()/15000);const dynamicCode=`SHAMAA*${datePart}*${timeSeq}`;container.innerHTML='';new QRCode(container,{text:dynamicCode,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});qrSecondsLeft=15;};update();if(qrInterval)clearInterval(qrInterval);if(qrCountdownInterval)clearInterval(qrCountdownInterval);qrInterval=setInterval(update,15000);qrCountdownInterval=setInterval(()=>{qrSecondsLeft--;if(qrSecondsLeft<0)qrSecondsLeft=15;const el=document.getElementById('qrCountdown');if(el){el.textContent=qrSecondsLeft;el.style.borderColor=qrSecondsLeft<=5?'var(--danger)':'var(--accent)';el.style.color=qrSecondsLeft<=5?'var(--danger)':'var(--accent)';}},1000);}
 
-function doLogin(){const u=document.getElementById('loginUser').value.trim().toLowerCase();const p=document.getElementById('loginPass').value.trim();if(!u||!p){toast('أدخل اسم المستخدم وكلمة المرور','warn');return;}if(isOnline&&firebaseReady){if(!allUsers[u]){toast('اسم المستخدم غير موجود','error');return;}if(allUsers[u].password!==p){toast('كلمة المرور غير صحيحة','error');return;}ME={username:u,...allUsers[u]};ME.role=ADMINS.includes(u)?'admin':'employee';saveLocalCredentials(u,allUsers[u]);addLocalUsername(u);localStorage.setItem('sh_active_user', u);if(ME.role!=='admin')syncLocalAttToFirebase(u);if(ME.role==='admin'){enterDashboard();return;}const approved=ME.approvedDevice;if(approved&&approved===DEV_ID){enterDashboard();}else if(approved&&approved!==DEV_ID){document.getElementById('rejDevId').textContent=DEV_ID;showScreen('screenRejected');}else{showBindScreen(!!ME.pendingDevice);}}else{const lc=getLocalCredentials(u);if(!lc){toast('لازم تفتح نت أول مرة','error');return;}if(lc.password!==p){toast('كلمة المرور غلط','error');return;}if(ADMINS.includes(u)){toast('المدير لازم يكون متصل بالنت','error');return;}ME={username:u,realName:lc.realName,password:lc.password,role:lc.role,approvedDevice:lc.approvedDevice,_offlineMode:true};if(ME.approvedDevice&&ME.approvedDevice!==DEV_ID){document.getElementById('rejDevId').textContent=DEV_ID;showScreen('screenRejected');return;}if(!ME.approvedDevice){toast('الجهاز مش مربوط','warn');return;}localStorage.setItem('sh_active_user', u);toast('دخول أوفلاين','info');enterDashboard();}}
+function doLogin(){const u=document.getElementById('loginUser').value.trim().toLowerCase();const p=document.getElementById('loginPass').value.trim();if(!u||!p){toast('أدخل اسم المستخدم وكلمة المرور','warn');return;}if(isOnline&&firebaseReady){if(!allUsers[u]){toast('اسم المستخدم غير موجود','error');return;}if(allUsers[u].password!==p){toast('كلمة المرور غير صحيحة','error');return;}ME={username:u,...allUsers[u]};ME.role=ADMINS.includes(u)?'admin':'employee';saveLocalCredentials(u,allUsers[u]);addLocalUsername(u);localStorage.setItem('sh_active_user', u);if(ME.role!=='admin'){syncLocalAttToFirebase(u);syncServerTime();}if(ME.role==='admin'){enterDashboard();return;}const approved=ME.approvedDevice;if(approved&&approved===DEV_ID){enterDashboard();}else if(approved&&approved!==DEV_ID){document.getElementById('rejDevId').textContent=DEV_ID;showScreen('screenRejected');}else{showBindScreen(!!ME.pendingDevice);}}else{const lc=getLocalCredentials(u);if(!lc){toast('لازم تفتح نت أول مرة','error');return;}if(lc.password!==p){toast('كلمة المرور غلط','error');return;}if(ADMINS.includes(u)){toast('المدير لازم يكون متصل بالنت','error');return;}ME={username:u,realName:lc.realName,password:lc.password,role:lc.role,approvedDevice:lc.approvedDevice,_offlineMode:true};if(ME.approvedDevice&&ME.approvedDevice!==DEV_ID){document.getElementById('rejDevId').textContent=DEV_ID;showScreen('screenRejected');return;}if(!ME.approvedDevice){toast('الجهاز مش مربوط','warn');return;}localStorage.setItem('sh_active_user', u);syncServerTime();toast('دخول أوفلاين','info');enterDashboard();}}
 
 function doLogout(){ME=null;localStorage.removeItem('sh_active_user');if(bindCheckTimer){clearInterval(bindCheckTimer);bindCheckTimer=null;}if(qrInterval){clearInterval(qrInterval);qrInterval=null;}if(qrCountdownInterval){clearInterval(qrCountdownInterval);qrCountdownInterval=null;}if(staticQrInterval){clearInterval(staticQrInterval);staticQrInterval=null;}stopEmpScanner();stopMainScanner();stopStationScanner();document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';showScreen('screenLogin');updateNetUI();}
 
@@ -595,10 +522,10 @@ function openEmpQrModal(){if(!ME)return;document.getElementById('eqmName').textC
 function closeEmpQrModal(){document.getElementById('empQrModalOverlay').classList.remove('open');}
 
 let staticQrInterval = null;
-function renderStaticBadge(){if(!ME||ME.role==='admin')return;const container=document.getElementById('staticQrContainer');if(!container)return;container.innerHTML='';const qrData=`SHAMAA_ID|${ME.username}|${ME.realName||ME.username}|${Math.floor(Date.now()/1000)}`;try{new QRCode(container,{text:qrData,width:200,height:200,colorDark:"#000000",colorLight:"#ffffff"});}catch(e){}}
+function renderStaticBadge(){if(!ME||ME.role==='admin')return;const container=document.getElementById('staticQrContainer');if(!container)return;container.innerHTML='';const secureTime = getSecureTime();const qrData=`SHAMAA_ID|${ME.username}|${ME.realName||ME.username}|${Math.floor(secureTime.getTime()/1000)}`;try{new QRCode(container,{text:qrData,width:200,height:200,colorDark:"#000000",colorLight:"#ffffff"});}catch(e){}}
 function startStaticQrRefresh(){if(staticQrInterval) clearInterval(staticQrInterval); staticQrInterval = setInterval(renderStaticBadge, 15000);}
 
-function enterDashboard(){showScreen('screenDash');document.getElementById('dashName').textContent=ME.realName||ME.username;const isAdmin=ME.role==='admin';document.getElementById('adminSection').classList.toggle('hidden',!isAdmin);document.getElementById('empView').classList.toggle('hidden',isAdmin);document.getElementById('btnMyQr').classList.toggle('hidden',isAdmin);document.getElementById('empScheduleCard').classList.toggle('hidden',isAdmin);currentAttDate=TODAY;updateAttDateLabel();if(isAdmin){generateQR();fillUserSelects();fillReportEmpFilter();fillManualBindSelect();initReportDates('thisWeek');}renderWeekCalendar();renderEmpSchedule();renderAttTable();renderShiftsTable();updateNetUI();updateSyncBanner();if(!isAdmin){renderStaticBadge();startStaticQrRefresh();if(!ME._offlineMode)listenToMyStatus();else renderEmpStatusLocal();listenToMySchedule();}}
+function enterDashboard(){showScreen('screenDash');document.getElementById('dashName').textContent=ME.realName||ME.username;const isAdmin=ME.role==='admin';document.getElementById('adminSection').classList.toggle('hidden',!isAdmin);document.getElementById('empView').classList.toggle('hidden',isAdmin);document.getElementById('btnMyQr').classList.toggle('hidden',isAdmin);document.getElementById('empScheduleCard').classList.toggle('hidden',isAdmin);currentAttDate=TODAY;updateAttDateLabel();if(isAdmin){generateQR();fillUserSelects();fillReportEmpFilter();fillManualBindSelect();initReportDates('thisWeek');}renderWeekCalendar();renderEmpSchedule();renderAttTable();renderShiftsTable();updateNetUI();updateSyncBanner();if(!isAdmin){renderStaticBadge();startStaticQrRefresh();syncServerTime();if(!ME._offlineMode)listenToMyStatus();else renderEmpStatusLocal();listenToMySchedule();}}
 
 function listenToMyStatus(){if(!ME||ME.role==='admin')return;db.ref(`users/${ME.username}/attendance/${TODAY}`).on('value',snap=>{renderEmpStatusBar(snap.val());renderWeekCalendar();});}
 function listenToMySchedule(){if(!ME||ME.role==='admin')return;const wk=weekKey(TODAY);db.ref(`schedules/${ME.username}/${wk}`).on('value',snap=>{if(snap.val()){allSched[ME.username]=allSched[ME.username]||{};allSched[ME.username][wk]=snap.val();LS.set('sched_'+ME.username+'_'+wk,snap.val());renderEmpSchedule();}});}
@@ -611,7 +538,6 @@ function startScan(){
     const r=document.getElementById('reader'),btn=document.getElementById('scanMainBtn'),title=document.getElementById('scanTitle'),desc=document.getElementById('scanDesc'),steps=document.getElementById('scanSteps');
     r.classList.remove('hidden');btn.classList.add('scanning');btn.innerHTML='<i class="fa-solid fa-xmark"></i>';
     title.textContent='الكاميرا مفتوحة...';title.style.color='var(--danger)';desc.textContent='قرّب الكاميرا من شاشة المدير';steps.classList.add('hidden');isScanning=true;
-    
     mainScanner=new Html5Qrcode("reader");
     mainScanner.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:250}},(text)=>{stopMainScanner();processScannedQR(text);},()=>{}).catch((err)=>{stopMainScanner();toast('تعذر فتح الكاميرا','error');});
 }
@@ -625,9 +551,37 @@ function stopMainScanner(){
     isScanning=false;
 }
 
-function processScannedQR(text){if(!ME)return toast('سجل دخولك أولاً','error');const now=new Date();const datePart=String(now.getDate()).padStart(2,'0')+String(now.getMonth()+1).padStart(2,'0')+String(now.getFullYear()).slice(-2);const ct=Math.floor(Date.now()/15000),pt=ct-1;const v1=`SHAMAA*${datePart}*${ct}`,v2=`SHAMAA*${datePart}*${pt}`;if(text===v1||text===v2){const time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');const today=TODAY_STR();let la=getLocalAttendance(ME.username);let cd=la[today]||{};if(!cd.clockIn){savePunchOffline('in',time);}else if(!cd.clockOut){savePunchOffline('out',time);}else{toast('أنت مسجل حضور وانصراف بالفعل','warn');}stopMainScanner();}else{toast('كود منتهي أو غير صحيح','error');}}
+function processScannedQR(text){if(!ME)return toast('سجل دخولك أولاً','error');const now=new Date();const datePart=String(now.getDate()).padStart(2,'0')+String(now.getMonth()+1).padStart(2,'0')+String(now.getFullYear()).slice(-2);const ct=Math.floor(Date.now()/15000),pt=ct-1;const v1=`SHAMAA*${datePart}*${ct}`,v2=`SHAMAA*${datePart}*${pt}`;if(text===v1||text===v2){const secureTime = getSecureTime();const time=secureTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });const today=secureTime.toISOString().split('T')[0];let la=getLocalAttendance(ME.username);let cd=la[today]||{};if(!cd.clockIn){savePunchOffline('in',time);}else if(!cd.clockOut){savePunchOffline('out',time);}else{toast('أنت مسجل حضور وانصراف بالفعل','warn');}stopMainScanner();}else{toast('كود منتهي أو غير صحيح','error');}}
 
-function savePunchOffline(type,time){const today=TODAY_STR();let la=getLocalAttendance(ME.username);if(!la[today])la[today]={status:'Present',date:today};if(type==='in'){la[today].clockIn=time;la[today].status='Present';}else{la[today].clockOut=time;}la[today]._offline=true;LS.set('att_'+ME.username,la);let q=LS.get('sync_queue',[]);q.push({username:ME.username,date:today,time:time,type:type,deviceId:DEV_ID,timestamp:Date.now(),actualTimestamp:Math.floor(Date.now()/1000)});LS.set('sync_queue',q);renderEmpStatusLocal();renderWeekCalendar();updateSyncBanner();renderStaticBadge();const label=type==='in'?'حضور':'انصراف';showPunchConfirm('offline',`تم تسجيل ${label}`,time,'تم الحفظ محلياً (سيتم الرفع فور توفر إنترنت أو عند مسح المدير لك)');if(navigator.onLine)syncOfflinePunches();}
+function savePunchOffline(type,time){
+    const secureTime = getSecureTime(); 
+    const secureDate = secureTime.toISOString().split('T')[0];
+    const secureTimeString = secureTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    
+    let la=getLocalAttendance(ME.username);
+    if(!la[secureDate])la[secureDate]={status:'Present',date:secureDate};
+    if(type==='in'){
+        la[secureDate].clockIn=secureTimeString;
+        la[secureDate].status='Present';
+    }else{
+        la[secureDate].clockOut=secureTimeString;
+    }
+    la[secureDate]._offline=true;
+    LS.set('att_'+ME.username,la);
+    
+    let q=LS.get('sync_queue',[]);
+    q.push({username:ME.username,date:secureDate,time:secureTimeString,type:type,deviceId:DEV_ID,timestamp:Date.now(),actualTimestamp:Math.floor(secureTime.getTime()/1000)});
+    LS.set('sync_queue',q);
+    
+    renderEmpStatusLocal();
+    renderWeekCalendar();
+    updateSyncBanner();
+    renderStaticBadge();
+    
+    const label=type==='in'?'حضور':'انصراف';
+    showPunchConfirm('offline',`تم تسجيل ${label}`,secureTimeString,'تم الحفظ محلياً بتوقيت السيرفر (سيتم الرفع فور توفر إنترنت أو عند مسح المدير لك)');
+    if(navigator.onLine)syncOfflinePunches();
+}
 
 function showPunchConfirm(type,title,time,sub){const o=document.getElementById('punchConfirmOverlay'),b=document.getElementById('punchConfirmBox');const c={success:{ic:'success',in:'circle-check',co:'var(--success)'},error:{ic:'error',in:'circle-xmark',co:'var(--danger)'},offline:{ic:'offline',in:'wifi-slash',co:'var(--off-color)'}};const x=c[type]||c.success;b.innerHTML=`<div class="punch-confirm-icon ${x.ic}"><i class="fa-solid fa-${x.in}"></i></div><div class="punch-confirm-title" style="color:${x.co}">${title}</div><div class="punch-confirm-time" style="color:${x.co}">${time}</div><div class="punch-confirm-sub">${sub}</div><button class="btn btn-primary btn-full" onclick="closePunchConfirm()">تم</button>`;o.classList.add('open');setTimeout(()=>{o.classList.remove('open');},4500);}
 function closePunchConfirm(e){if(e&&e.target!==e.currentTarget&&!e.target.closest('.btn'))return;document.getElementById('punchConfirmOverlay').classList.remove('open');}
@@ -695,143 +649,47 @@ function stopStationScanner(){
 function toggleStationMode() {
     const reader = document.getElementById('stationReader');
     const btn = document.getElementById('stationModeBtn');
-    
     if (!stationScanner) {
         if (mainScanner) stopMainScanner();
-
-        reader.classList.remove('hidden');
-        reader.style.display = 'block';
-        
+        reader.classList.remove('hidden');reader.style.display = 'block';
         stationScanner = new Html5Qrcode("stationReader");
-        
-        const config = { fps: 20, qrbox: { width: 250, height: 250 } };
-
-        stationScanner.start(
-            { facingMode: "environment" }, 
-            config, 
-            (text) => { handleContinuousScan(text); }
-        ).then(() => {
-            toast("محطة الاستقبال تعمل الآن", "success");
-            btn.innerHTML = '<i class="fa-solid fa-stop" style="margin-left: 10px;"></i> إيقاف محطة الاستقبال';
-            btn.classList.replace('btn-success', 'btn-danger');
-            reader.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }).catch((err) => {
-            toast("فشل فتح الكاميرا", "error");
-            reader.classList.add('hidden');
-            stationScanner = null;
-        });
-    } else {
-        stopStationScanner();
-        const readerEl = document.getElementById('stationReader');
-        if(readerEl) {
-            readerEl.classList.add('hidden');
-            readerEl.style.display = 'none';
-        }
-    }
+        stationScanner.start({ facingMode: "environment" },{ fps: 20, qrbox: { width: 250, height: 250 } },(text) => { handleContinuousScan(text); }).then(() => {
+            toast("محطة الاستقبال تعمل الآن", "success");btn.innerHTML = '<i class="fa-solid fa-stop" style="margin-left: 10px;"></i> إيقاف محطة الاستقبال';btn.classList.replace('btn-success', 'btn-danger');reader.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }).catch((err) => {toast("فشل فتح الكاميرا", "error");reader.classList.add('hidden');stationScanner = null;});
+    } else {stopStationScanner();const readerEl = document.getElementById('stationReader');if(readerEl) {readerEl.classList.add('hidden');readerEl.style.display = 'none';}}
 }
 
 function handleContinuousScan(text){
     const now=Date.now();
     if(text===lastScannedUser&&now-lastScanTime<10000)return;
-    
     const p=text.split('|');
-    
     if(p[0]==="SHAMAA_ID"){
-        const user=p[1];
-        const name=p[2];
-        const actualTimestamp = p[3] ? parseInt(p[3]) : null;
-        
-        lastScannedUser=text;
-        lastScanTime=now;
-        
-        let punchTime = "";
-        let today = TODAY_STR();
-        
-        // نستخدم التوقيت الفعلي المحفوظ في الكود بتاع الموظف، ومش نعتمد على ساعة المدير
-        if (actualTimestamp) {
-            const punchDate = new Date(actualTimestamp * 1000);
-            today = punchDate.toISOString().split('T')[0];
-            punchTime = punchDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        } else {
-            const punchDate = new Date();
-            today = punchDate.toISOString().split('T')[0];
-            punchTime = punchDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
-
+        const user=p[1];const name=p[2];const actualTimestamp = p[3] ? parseInt(p[3]) : null;
+        lastScannedUser=text;lastScanTime=now;
+        let punchTime = "";let today = TODAY_STR();
+        if (actualTimestamp) {const punchDate = new Date(actualTimestamp * 1000);today = punchDate.toISOString().split('T')[0];punchTime = punchDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });} else {const punchDate = new Date();today = punchDate.toISOString().split('T')[0];punchTime = punchDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });}
         db.ref(`users/${user}/attendance/${today}`).once('value').then(snap=>{
             const data=snap.val();
-            
-            if(data && data.clockIn && data.clockOut){
-                toast(`${name} مسجل حضور وانصراف خلاص في ${today}`,"warn");
-                let q=LS.get('sync_queue',[]);
-                q=q.filter(item=>!(item.username===user&&item.date===today));
-                LS.set('sync_queue',q);
-                let la=getLocalAttendance(user);
-                if(la[today]){ delete la[today]._offline; LS.set('att_'+user,la); }
-                updateSyncBanner();
-                return; 
-            }
-
-            if(data && data.clockIn === punchTime){
-                toast(`${name} البصمة دي مرفوعة بالفعل على السيرفر`,"info");
-                let q=LS.get('sync_queue',[]);
-                q=q.filter(item=>!(item.username===user&&item.date===today));
-                LS.set('sync_queue',q);
-                let la=getLocalAttendance(user);
-                if(la[today]){ delete la[today]._offline; la[today]={...la[today],...data}; LS.set('att_'+user,la); }
-                updateSyncBanner();
-                return;
-            }
-
-            let upd={date:today, status:'Present'};
-            let actionType = "";
-            
-            if(!data || !data.clockIn){
-                upd.clockIn=punchTime;
-                actionType = "حضور";
-            }else if(!data.clockOut){
-                if(data.clockIn === punchTime){
-                    toast(`خطأ: وقت الخروج نفس وقت الدخول (${punchTime})`,"error");
-                    return;
-                }
-                upd.clockOut=punchTime;
-                actionType = "انصراف";
-            }
-
+            if(data && data.clockIn && data.clockOut){toast(`${name} مسجل حضور وانصراف خلاص في ${today}`,"warn");let q=LS.get('sync_queue',[]);q=q.filter(item=>!(item.username===user&&item.date===today));LS.set('sync_queue',q);let la=getLocalAttendance(user);if(la[today]){ delete la[today]._offline; LS.set('att_'+user,la); }updateSyncBanner();return; }
+            if(data && data.clockIn === punchTime){toast(`${name} البصمة دي مرفوعة بالفعل على السيرفر`,"info");let q=LS.get('sync_queue',[]);q=q.filter(item=>!(item.username===user&&item.date===today));LS.set('sync_queue',q);let la=getLocalAttendance(user);if(la[today]){ delete la[today]._offline; la[today]={...la[today],...data}; LS.set('att_'+user,la); }updateSyncBanner();return;}
+            let upd={date:today, status:'Present'};let actionType = "";
+            if(!data || !data.clockIn){upd.clockIn=punchTime;actionType = "حضور";}else if(!data.clockOut){if(data.clockIn === punchTime){toast(`خطأ: وقت الخروج نفس وقت الدخول (${punchTime})`,"error");return;}upd.clockOut=punchTime;actionType = "انصراف";}
             db.ref(`users/${user}/attendance/${today}`).update(upd).then(()=>{
                 try{new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3').play();}catch(e){}
                 if(navigator.vibrate)navigator.vibrate(200);
-                
-                toast(`تم رفع بصمة ${actionType} لـ ${name} بتوقيت ${punchTime}`,"success");
-                
-                let q=LS.get('sync_queue',[]);
-                const oldLength = q.length;
-                q=q.filter(item=>!(item.username===user&&item.date===today));
-                if(q.length < oldLength){
-                    LS.set('sync_queue',q);
-                }
-                
-                let la=getLocalAttendance(user);
-                if(la[today]){
-                    delete la[today]._offline;
-                    la[today]={...la[today],...upd};
-                    LS.set('att_'+user,la);
-                }
-                
-                renderAttTable();
-                updateSyncBanner();
+                toast(`تم رفع بصمة ${actionType} لـ ${name} بتوقيت السيرفر ${punchTime}`,"success");
+                let q=LS.get('sync_queue',[]);const oldLength = q.length;q=q.filter(item=>!(item.username===user&&item.date===today));if(q.length < oldLength){LS.set('sync_queue',q);}
+                let la=getLocalAttendance(user);if(la[today]){delete la[today]._offline;la[today]={...la[today],...upd};LS.set('att_'+user,la);}
+                renderAttTable();updateSyncBanner();
             });
         });
     } 
-    else if(p[0]===EMP_QR_PREFIX){
-        stopStationScanner();
-        handleEmpScan(text);
-    }
+    else if(p[0]===EMP_QR_PREFIX){stopStationScanner();handleEmpScan(text);}
 }
 
 function initListeners(){db.ref('users').on('value',snap=>{allUsers=snap.val()||{};firebaseReady=true;if(ME&&allUsers[ME.username]){const ud=allUsers[ME.username];ME={username:ME.username,...ud};ME.role=ADMINS.includes(ME.username)?'admin':'employee';if(ud.approvedDevice===DEV_ID&&!document.getElementById('screenBind').classList.contains('hidden')){enterDashboard();}}renderAttTable();renderShiftsTable();renderWeekCalendar();renderEmpSchedule();if(ME&&ME.role==='admin')renderDevicesTable();});db.ref('schedules').on('value',snap=>{allSched=snap.val()||{};renderShiftsTable();renderEmpSchedule();});}
 
-initListeners();updateNetUI();
+initListeners();updateNetUI();syncServerTime();
 if(navigator.onLine)setTimeout(syncOfflinePunches,2000);
 document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginPass').focus();});
