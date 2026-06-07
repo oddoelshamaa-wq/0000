@@ -731,71 +731,70 @@ function stopMainScanner(){
 async function processScannedQR(text){
     if(!ME) return toast('سجل دخولك أولاً', 'error');
     
-    if(text.startsWith('SHAMAA_ADMIN|')) {
-        const now = new Date();
-        const time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
-        const today = getTodayStr();
+    // تعديل هنا: البحث عن الكود الصحيح حتى لو الكاميرا قرأت نصوص إضافية
+    const adminCodePrefix = 'SHAMAA_ADMIN|';
+    const startIndex = text.indexOf(adminCodePrefix);
+    
+    // لو الكود مش موجود أصلاً
+    if (startIndex === -1) {
+        toast('كود غير صحيح أو منتهي الصلاحية', 'error');
+        return;
+    }
+    
+    // استخراج الكود الصحيح فقط
+    const cleanText = text.substring(startIndex);
+    
+    // تقسيم الكود للحصول على اسم المدير
+    const p = cleanText.split('|');
+    if(p.length < 2) {
+        toast('الكود ناقص أو تالف، حاول مرة أخرى', 'error');
+        return;
+    }
+    
+    const adminUser = p[1]; 
+    
+    const now = new Date();
+    const time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+    const today = getTodayStr();
+    
+    let la = getLocalAttendance(ME.username);
+    let cd = la[today] || {};
+    const btn = document.getElementById('scanMainBtn');
+    const title = document.getElementById('scanTitle');
+    
+    if(!cd.clockIn) {
+        savePunchOffline('in', time);
+        const punchData = {
+            username: ME.username,
+            date: today,
+            data: { clockIn: time, status: 'Present', deviceId: DEV_ID, date: today }
+        };
+        await savePunchToIndexedDB(punchData);
+        requestBackgroundSync();
         
-        let la = getLocalAttendance(ME.username);
-        let cd = la[today] || {};
-        const btn = document.getElementById('scanMainBtn');
-        const title = document.getElementById('scanTitle');
+        btn.style.background = 'var(--success)'; btn.innerHTML = '<i class="fa-solid fa-wifi"></i>';
+        title.textContent = 'جاري رفع البصمة...'; title.style.color = 'var(--success)';
+        toast('تم تسجيل حضورك بنجاح! البصمة هتترفع لوحدها', 'success');
         
-        if(!cd.clockIn) {
-            // 1. حفظ البصمة محلياً أولاً
-            savePunchOffline('in', time);
-            
-            // 2. حفظ البصمة في IndexedDB عشان الـ Service Worker يرفعها
-            const punchData = {
-                username: ME.username,
-                date: today,
-                data: {
-                    clockIn: time,
-                    status: 'Present',
-                    deviceId: DEV_ID,
-                    date: today
-                }
-            };
-            await savePunchToIndexedDB(punchData);
-            
-            // 3. طلب فتح الشبكة في الخلفية من الـ App (هنا السحر)
-            requestBackgroundSync();
-            
-            // 4. تغيير شكل الزر
-            btn.style.background = 'var(--success)'; btn.innerHTML = '<i class="fa-solid fa-wifi"></i>';
-            title.textContent = 'جاري رفع البصمة (شغل النت لو مقفول)...'; title.style.color = 'var(--success)';
-            
-            toast('تم تسجيل حضورك! البصمة هتترفع لوحدها', 'success');
-            
-        } else if(!cd.clockOut) {
-            // نفس الخطوات للانصراف
-            savePunchOffline('out', time);
-            
-            const punchData = {
-                username: ME.username,
-                date: today,
-                data: {
-                    clockOut: time
-                }
-            };
-            await savePunchToIndexedDB(punchData);
-            
-            requestBackgroundSync();
-            
-            btn.style.background = 'var(--primary)'; btn.innerHTML = '<i class="fa-solid fa-wifi"></i>';
-            title.textContent = 'جاري رفع الانصراف (شغل النت لو مقفول)...'; title.style.color = 'var(--primary)';
-            
-            toast('تم تسجيل انصرافك! البصمة هتترفع لوحدها', 'info');
-            
-        } else {
-            toast('أنت مسجل حضور وانصراف بالفعل اليوم', 'warn');
-        }
+    } else if(!cd.clockOut) {
+        savePunchOffline('out', time);
+        const punchData = {
+            username: ME.username,
+            date: today,
+            data: { clockOut: time }
+        };
+        await savePunchToIndexedDB(punchData);
+        requestBackgroundSync();
         
-        setTimeout(() => { stopMainScanner(); renderEmpStatusLocal(); renderWeekCalendar(); }, 1500);
+        btn.style.background = 'var(--primary)'; btn.innerHTML = '<i class="fa-solid fa-wiki"></i>';
+        title.textContent = 'جاري رفع الانصراف...'; title.style.color = 'var(--primary)';
+        toast('تم تسجيل انصرافك بنجاح! البصمة هتترفع لوحدها', 'info');
         
     } else {
-        toast('كود غير صحيح أو منتهي الصلاحية', 'error');
+        toast('أنت مسجل حضور وانصراف بالفعل اليوم', 'warn');
     }
+    
+    setTimeout(() => { stopMainScanner(); renderEmpStatusLocal(); renderWeekCalendar(); }, 1500);
 }
 
 // ===== دالة حفظ البصمة في IndexedDB =====
