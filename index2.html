@@ -520,7 +520,7 @@ table{min-width:500px}
     </div>
 </div>
 
-<!-- باقي المودالات -->
+<!-- المودالات -->
 <div id="corrModal" class="modal-overlay" role="dialog"><div class="modal-box"><h3><i class="fa-solid fa-pen-to-square"></i> تصحيح سجل الحضور</h3><div id="corrTarget" style="font-size:0.9rem;color:var(--text-dim);margin-bottom:16px;"></div><div class="form-group"><label>الحالة</label><select id="corrStatus" class="form-input"><option value="Present">حاضر</option><option value="Absent">غائب</option><option value="Sick Leave">مرضية</option><option value="Annual Leave">سنوية</option></select></div><div style="display:flex;gap:10px;"><div class="form-group" style="flex:1;"><label>وقت الدخول</label><input type="time" id="corrIn" class="form-input"></div><div class="form-group" style="flex:1;"><label>وقت الخروج</label><input type="time" id="corrOut" class="form-input"></div></div><div class="modal-actions"><button class="btn btn-success" onclick="saveCorrection()"><i class="fa-solid fa-check"></i> حفظ</button><button class="btn btn-ghost" onclick="closeCorrModal()"><i class="fa-solid fa-xmark"></i> إلغاء</button></div></div></div>
 <div id="shiftDetailModal" class="modal-overlay" role="dialog"><div class="modal-box"><h3 id="shiftDetailTitle"><i class="fa-solid fa-clipboard-list"></i> تفاصيل المخالفات</h3><div id="shiftDetailContent"></div><div class="modal-actions"><button class="btn btn-ghost btn-full" onclick="closeShiftDetail()"><i class="fa-solid fa-xmark"></i> إغلاق</button></div></div></div>
 <div id="empQrModalOverlay" class="modal-overlay" role="dialog"><div class="emp-qr-modal-box"><div class="eqm-name" id="eqmName">--</div><div class="eqm-user" id="eqmUser">@username</div><div id="empQrModal"></div><button class="btn btn-primary btn-full" style="margin-top:16px;" onclick="closeEmpQrModal()"><i class="fa-solid fa-xmark"></i> إغلاق</button></div></div>
@@ -746,22 +746,50 @@ function handleContinuousScan(text){
         
         const punchDate = actualTimestamp ? new Date(actualTimestamp * 1000) : new Date();
         const today = punchDate.toISOString().split('T')[0];
-        const punchTime = punchDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        // تعديل هنا: إضافة الثواني لمنع تكرار نفس الدقيقة
+        const punchTime = punchDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
         db.ref(`users/${user}/attendance/${today}`).once('value').then(snap=>{
             const data=snap.val();
+            
+            // حماية 1: لو مسجل حضور وانصراف خلاص
+            if(data && data.clockIn && data.clockOut){
+                toast(`${name} مسجل حضور وانصراف خلاص في ${today}`,"warn");
+                let q=LS.get('sync_queue',[]);
+                q=q.filter(item=>!(item.username===user&&item.date===today));
+                LS.set('sync_queue',q);
+                let la=getLocalAttendance(user);
+                if(la[today]){ delete la[today]._offline; LS.set('att_'+user,la); }
+                updateSyncBanner();
+                return; 
+            }
+
+            // حماية 2: لو البصمة اترفعت أونلاين بالفعل (نفس الوقت بالثانية)
+            if(data && data.clockIn === punchTime){
+                toast(`${name} البصمة دي مرفوعة بالفعل على السيرفر`,"info");
+                let q=LS.get('sync_queue',[]);
+                q=q.filter(item=>!(item.username===user&&item.date===today));
+                LS.set('sync_queue',q);
+                let la=getLocalAttendance(user);
+                if(la[today]){ delete la[today]._offline; la[today]={...la[today],...data}; LS.set('att_'+user,la); }
+                updateSyncBanner();
+                return;
+            }
+
             let upd={date:today, status:'Present'};
             let actionType = "";
             
-            if(!data||!data.clockIn){
+            if(!data || !data.clockIn){
                 upd.clockIn=punchTime;
                 actionType = "حضور";
             }else if(!data.clockOut){
+                // حماية 3: لو وقت الخروج نفس وقت الدخول
+                if(data.clockIn === punchTime){
+                    toast(`خطأ: وقت الخروج نفس وقت الدخول (${punchTime})`,"error");
+                    return;
+                }
                 upd.clockOut=punchTime;
                 actionType = "انصراف";
-            }else{
-                toast(`${name} مسجل حضور وانصراف خلاص في ${today}`,"warn");
-                return; 
             }
 
             db.ref(`users/${user}/attendance/${today}`).update(upd).then(()=>{
