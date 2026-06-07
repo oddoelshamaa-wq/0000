@@ -714,7 +714,7 @@ function stopMainScanner(){
 }
 
 // ===== دالة معالجة الكود المعدلة لمنع خطأ "الكود غلط" =====
-// ===== دالة معالجة الكود المعدلة لمنع خطأ "الكود غلط" =====
+// ===== دالة معالجة الكود المعدلة لتوجيه الموظف =====
 async function processScannedQR(text){
     if(!ME) return toast('سجل دخولك أولاً', 'error');
     
@@ -724,12 +724,12 @@ async function processScannedQR(text){
     
     // لو الكود مش موجود أصلاً في النص اللي الموبايل قرأه
     if (startIndex === -1) {
-        // أحياناً الكاميرا بتقرأ الحروف غلط، فبنشوف لو فيها حاجة قريبة
-        const possibleTypo = text.indexOf('SHAMAA_ADM');
-        if (possibleTypo !== -1) {
-            toast('الكود مش واضح، قرّب الكاميرا أكتر من الـ QR بس', 'warn');
+        // هنا بنشوف هل هو مسح كود الموظف بالغلط ولا كود غريب خالص
+        const empCodePrefix = 'SHAMAA_EMP|';
+        if (text.indexOf(empCodePrefix) !== -1) {
+            toast('ده كود موظف! المفروض تصور كود المدير اللي على شاشته', 'warn');
         } else {
-            toast('كود غير صحيح، امسح كود المدير فقط', 'error');
+            toast('كود غريب! صور الـ QR اللي على شاشة المدير بس', 'error');
         }
         return;
     }
@@ -740,7 +740,7 @@ async function processScannedQR(text){
     // الكود الصحيح بتاعنا بيكون شكله (SHAMAA_ADMIN|username)
     // فبنشوف أول مسافة أو سطر جديد بعد الكود وبنقصه
     const spaceIndex = cleanText.search(/[\s\n\r]/);
-    if (spaceIndex !== -1 && spaceIndex < 30) { // 30 حرف هو أكبر حجم متوقع للكود
+    if (spaceIndex !== -1 && spaceIndex < 30) { 
         cleanText = cleanText.substring(0, spaceIndex);
     }
     
@@ -788,7 +788,6 @@ async function processScannedQR(text){
     
     setTimeout(() => { stopMainScanner(); renderEmpStatusLocal(); renderWeekCalendar(); }, 1500);
 }
-
 function getTodayStr(){return new Date().toISOString().split('T')[0];}
 
 function savePunchToIndexedDB(punch) {
