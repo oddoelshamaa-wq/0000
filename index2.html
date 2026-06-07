@@ -349,13 +349,29 @@ table{min-width:500px}
         <div class="week-card" id="weekCard"></div>
 
         <!-- واجهة الموظف -->
-        <div id="empView">
-            <!-- زر الموظف الجديد (يظهر في شاشته) -->
-<div style="margin-bottom: 20px;">
-    <button class="btn btn-primary btn-full btn-lg" onclick="showMyOfflineBadge()" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); height: 80px;">
-        <i class="fa-solid fa-qrcode" style="margin-left: 10px;"></i> بصمة حضور (أوفلاين)
-    </button>
-    <p style="text-align: center; color: var(--text-dim); font-size: 0.8rem; margin-top: 8px;">اضغط هنا واعرض الكود للمدير</p>
+<div id="empView">
+    <div style="max-width: 350px; margin: 0 auto; background: #1e293b; padding: 20px; border-radius: 30px; border: 4px solid #334155; text-align: center;">
+        <div style="color: #94a3b8; font-size: 0.8rem; margin-bottom: 10px;">لوحة اتصال البصمة (أوفلاين)</div>
+        
+        <!-- شاشة الأرقام اللي الموظف بيكتب فيها -->
+        <div id="empDialDisplay" style="height: 50px; background: #0f172a; color: #22c55e; font-size: 1.8rem; border-radius: 10px; margin-bottom: 20px; line-height: 50px; letter-spacing: 5px; font-family: monospace;">---</div>
+
+        <!-- أزرار الأرقام -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;" id="dialPad">
+            <!-- سيتم توليد الأزرار بالـ JS -->
+        </div>
+
+        <!-- زر الاتصال اللي بيطلع الـ QR -->
+        <button onclick="makeEmployeeCall()" style="width: 70px; height: 70px; border-radius: 50%; background: #22c55e; border: none; color: white; font-size: 1.5rem; margin-top: 20px; cursor: pointer; box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);">
+            <i class="fa-solid fa-phone"></i>
+        </button>
+
+        <!-- مكان الـ QR اللي هيظهر للمدير (مخفي وهيظهر لحظة الاتصال) -->
+        <div id="callQrArea" class="hidden" style="margin-top: 20px; background: white; padding: 10px; border-radius: 10px;">
+            <div id="empStaticQr"></div>
+            <div style="color: #000; font-size: 0.7rem; margin-top: 5px;">وجه الشاشة للكاميرا الآن</div>
+        </div>
+    </div>
 </div>
             <!-- جدول المناوبات (فقط للموظف) -->
             <div class="emp-schedule-card" id="empScheduleCard">
@@ -384,18 +400,47 @@ table{min-width:500px}
 
         <!-- قسم الادمن -->
         <div id="adminSection" class="hidden" style="margin-top:10px;">
+            <div id="managerStation" style="text-align: center;">
+    <button id="startStationBtn" class="btn btn-success btn-lg btn-full" onclick="toggleManagerStation()" style="height: 80px; font-size: 1.3rem;">
+        <i class="fa-solid fa-headset"></i> فتح محطة استقبال المكالمات
+    </button>
+    
+    <div id="stationCamera" class="hidden" style="margin-top: 20px; border-radius: 20px; overflow: hidden; border: 5px solid #22c55e; background: #000; position: relative;">
+        <!-- الكاميرا -->
+        <div id="managerReader"></div>
+        
+        <!-- شاشة "جاري الاتصال" تظهر لما يلقط حد -->
+        <div id="incomingCallUI" class="hidden" style="position: absolute; inset: 0; background: rgba(15, 23, 42, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100;">
+            <div style="width: 100px; height: 100px; border-radius: 50%; background: #22c55e; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: white; margin-bottom: 20px; animation: pulseRing 1.5s infinite;">
+                <i class="fa-solid fa-user"></i>
+            </div>
+            <div style="font-size: 0.9rem; color: #94a3b8;">مكالمة واردة من</div>
+            <div id="callerName" style="font-size: 2rem; font-weight: 900; color: white; margin-bottom: 30px;">--</div>
+            <div style="display: flex; gap: 40px;">
+                <div style="text-align: center; color: #ef4444;"><div style="width: 60px; height: 60px; border-radius: 50%; background: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; margin-bottom: 5px;"><i class="fa-solid fa-phone-slash"></i></div>رفض</div>
+                <div style="text-align: center; color: #22c55e;"><div style="width: 60px; height: 60px; border-radius: 50%; background: #22c55e; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; margin-bottom: 5px;"><i class="fa-solid fa-check"></i></div>قبول</div>
+            </div>
+        </div>
+    </div>
+</div>
             <!-- زر المدير الجديد (يظهر في شاشته) -->
 <div class="admin-fast-scan" style="margin-bottom: 20px;">
     <button class="btn btn-success btn-full btn-lg" onclick="toggleStationMode()" style="height: 80px; border-radius: 15px;">
         <i class="fa-solid fa-tower-broadcast" style="margin-left: 10px;"></i> فتح محطة استقبال البصمات
     </button>
 </div>
-            <div class="admin-qr-box">
-                <div style="font-weight:700;margin-bottom:12px;color:var(--accent);"><i class="fa-solid fa-shield-halved"></i> كود QR للبصمة (يتغير كل 15 ثانية)</div>
-                <div id="qrcode"></div>
-                <div class="qr-countdown" id="qrCountdown">15</div>
-                <div class="qr-timer"><i class="fa-solid fa-rotate"></i> الكود بيتجدد تلقائياً</div>
-            </div>
+            <<!-- قسم كود الحضور عند المدير (أرقام بدل QR) -->
+<div class="admin-qr-box" id="adminCodeSection">
+    <div style="font-weight:700;margin-bottom:12px;color:var(--accent);">
+        <i class="fa-solid fa-key"></i> كود الحضور الحالي (يتغير كل 15 ثانية)
+    </div>
+    <!-- هنا ستظهر الأرقام كبيرة جداً -->
+    <div id="adminDisplayCode" style="font-size: 3.5rem; font-family: monospace; font-weight: 900; letter-spacing: 12px; color: var(--primary); background: rgba(0,0,0,0.3); padding: 20px; border-radius: 20px; border: 2px dashed var(--primary); margin-bottom: 10px;">
+        ------
+    </div>
+    <div class="qr-countdown" id="qrCountdown">15</div>
+    <div class="qr-timer"><i class="fa-solid fa-rotate"></i> الكود يتحدث تلقائياً</div>
+</div>
 
             <div class="tabs-nav">
                 <button class="tab-btn active" data-tab="tabAtt" onclick="switchTab(this)"><i class="fa-solid fa-table-list"></i> البصمة</button>
@@ -743,30 +788,47 @@ function generateEmpQR(containerId,username,realName){
     try{new QRCode(c,{text:data,width:180,height:180,colorDark:"#0f172a",colorLight:"#ffffff"});}catch(e){}
 }
 
-function generateQR(){
-    const container=document.getElementById('qrcode');if(!container)return;
-    const update=()=>{
-        const now=new Date();
-        const datePart=String(now.getDate()).padStart(2,'0')+String(now.getMonth()+1).padStart(2,'0')+String(now.getFullYear()).slice(-2);
-        const timeSeq=Math.floor(Date.now()/15000);
-        const dynamicCode=`SHAMAA*${datePart}*${timeSeq}`;
-        container.innerHTML='';
-        new QRCode(container,{text:dynamicCode,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
-        qrSecondsLeft=15;
-    };
-    update();
-    if(qrInterval)clearInterval(qrInterval);
-    if(qrCountdownInterval)clearInterval(qrCountdownInterval);
-    qrInterval=setInterval(update,15000);
-    // عد تنازلي مرئي
-    qrCountdownInterval=setInterval(()=>{
-        qrSecondsLeft--;
-        if(qrSecondsLeft<0)qrSecondsLeft=15;
-        const el=document.getElementById('qrCountdown');
-        if(el){el.textContent=qrSecondsLeft;el.style.borderColor=qrSecondsLeft<=5?'var(--danger)':'var(--accent)';el.style.color=qrSecondsLeft<=5?'var(--danger)':'var(--accent)';}
-    },1000);
+// دالة لتوليد كود رقمي عشوائي للمدير
+// دالة لتوليد كود رقمي عشوائي للمدير
+function generateAdminCode() {
+    const display = document.getElementById('adminDisplayCode');
+    if (!display) return;
+
+    // توليد 6 أرقام عشوائية
+    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    // عرض الرقم في المربع اللي في الصورة
+    display.textContent = newCode;
+
+    // حفظ الكود في Firebase عشان الموظف يقدر يقارن بيه
+    if (navigator.onLine) {
+        db.ref('current_session_code').set(newCode);
+    }
+
+    qrSecondsLeft = 15; // إعادة ضبط العداد
 }
 
+// دالة تشغيل التايمر (العداد التنازلي)
+function startAdminCodeTimer() {
+    generateAdminCode(); // توليد أول كود فوراً
+    
+    if (qrInterval) clearInterval(qrInterval);
+    if (qrCountdownInterval) clearInterval(qrCountdownInterval);
+
+    // تحديث الكود كل 15 ثانية
+    qrInterval = setInterval(generateAdminCode, 15000);
+    
+    // تحديث شكل العداد التنازلي
+    qrCountdownInterval = setInterval(() => {
+        qrSecondsLeft--;
+        if (qrSecondsLeft < 0) qrSecondsLeft = 15;
+        const el = document.getElementById('qrCountdown');
+        if (el) {
+            el.textContent = qrSecondsLeft;
+            el.style.borderColor = qrSecondsLeft <= 5 ? 'var(--danger)' : 'var(--accent)';
+        }
+    }, 1000);
+}
 // ===== تسجيل الدخول =====
 function doLogin(){
     
@@ -852,20 +914,35 @@ function openEmpQrModal(){
 function closeEmpQrModal(){document.getElementById('empQrModalOverlay').classList.remove('open');}
 
 // ===== دخول لوحة التحكم =====
-function enterDashboard(){
-    showScreen('screenDash');document.getElementById('dashName').textContent=ME.realName||ME.username;
-    const isAdmin=ME.role==='admin';
-    document.getElementById('adminSection').classList.toggle('hidden',!isAdmin);
-    document.getElementById('empView').classList.toggle('hidden',isAdmin);
-    document.getElementById('btnMyQr').classList.toggle('hidden',isAdmin);
-    document.getElementById('empScheduleCard').classList.toggle('hidden',isAdmin);
-    currentAttDate=TODAY;updateAttDateLabel();
-    if(isAdmin){generateQR();fillUserSelects();fillReportEmpFilter();fillManualBindSelect();initReportDates('thisWeek');}
-    renderWeekCalendar();renderEmpSchedule();renderAttTable();renderShiftsTable();updateNetUI();updateSyncBanner();
-    if(!isAdmin&&!ME._offlineMode)listenToMyStatus();
-    if(!isAdmin&&ME._offlineMode)renderEmpStatusLocal();
-    // استماع لتحديثات المناوبات للموظف
-    if(!isAdmin)listenToMySchedule();
+function enterDashboard() {
+    showScreen('screenDash');
+    document.getElementById('dashName').textContent = ME.realName || ME.username;
+    
+    const isAdmin = ME.role === 'admin';
+    
+    document.getElementById('adminSection').classList.toggle('hidden', !isAdmin);
+    document.getElementById('empView').classList.toggle('hidden', isAdmin);
+    
+    // --- التعديل هنا ---
+    if (isAdmin) {
+        // لو مدير، شغل توليد الأرقام بدل الـ QR
+        startAdminCodeTimer(); 
+        
+        fillUserSelects();
+        fillReportEmpFilter();
+        fillManualBindSelect();
+        initReportDates('thisWeek');
+    } else {
+        // لو موظف، شغل لوحة المفاتيح بتاعته
+        initEmpDialer();
+    }
+    // ------------------
+
+    renderWeekCalendar();
+    renderEmpSchedule();
+    renderAttTable();
+    renderShiftsTable();
+    updateNetUI();
 }
 
 // ===== حالة الموظف =====
@@ -1244,108 +1321,137 @@ function checkPersistentLogin() {
 window.addEventListener('load', () => {
     checkPersistentLogin();
 });
-// 1. وظيفة الموظف: توليد الكود وهو أوفلاين
-// --- الكود الموحد والمصحح ---
-
-// 1. وظيفة الموظف (توليد كود الحضور)
-function showMyOfflineBadge() {
-    if(!ME) { toast("سجل دخولك أولاً", "error"); return; }
-    const now = new Date();
-    const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    
-    // كود يحتوي على: علامة النظام | اسم المستخدم | وقت البصمة | تاريخ اللحظة (بالملي ثانية)
-    const qrData = `SHAMAA_BADGE|${ME.username}|${time}|${Date.now()}`;
-    
-    const container = document.getElementById('empQrModal');
-    container.innerHTML = ''; // مسح أي كود قديم
-    new QRCode(container, {
-        text: qrData,
-        width: 220,
-        height: 220,
-        colorDark: "#000000",
-        colorLight: "#ffffff"
+// 1. إعداد لوحة مفاتيح الموظف
+let empInputCode = "";
+function initEmpDialer() {
+    const pad = document.getElementById('dialPad');
+    if(!pad) return;
+    pad.innerHTML = "";
+    ['1','2','3','4','5','6','7','8','9','*','0','#'].forEach(num => {
+        const btn = document.createElement('button');
+        btn.className = "btn btn-ghost";
+        btn.style.height = "60px"; btn.style.fontSize = "1.5rem";
+        btn.textContent = num;
+        btn.onclick = () => {
+            if(empInputCode.length < 6) empInputCode += num;
+            document.getElementById('empDialDisplay').textContent = empInputCode;
+            new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3').play().catch(()=>{});
+        };
+        pad.appendChild(btn);
     });
-    
-    document.getElementById('eqmName').textContent = "امسح الكود عند المدير";
-    document.getElementById('eqmUser').textContent = "سجل حضورك الآن";
-    document.getElementById('empQrModalOverlay').classList.add('open');
 }
 
-// 2. وظيفة المدير (فتح الكاميرا واستقبال البصمات)
-let stationScanner = null;
-function toggleStationMode() {
-    const reader = document.getElementById('reader');
-    const scanSection = document.getElementById('scanSection');
-    
-    if (!stationScanner) {
-        // إظهار منطقة الكاميرا
-        scanSection.classList.remove('hidden');
-        reader.classList.remove('hidden');
-        
-        stationScanner = new Html5Qrcode("reader");
-        
-        // ضبط الكاميرا: "user" للكمبيوتر (الويب كام) و "environment" للموبايل (الكاميرا الخلفية)
-        const config = { fps: 20, qrbox: 250 };
-        
-        // نحاول نفتح كاميرا الكمبيوتر (user) أولاً
-        stationScanner.start({ facingMode: "user" }, config, (text) => {
-            handleIncomingBadge(text);
-        }).catch(err => {
-            // لو فشل (مثلاً لو شغال من موبايل)، يفتح الكاميرا الخلفية
-            stationScanner.start({ facingMode: "environment" }, config, (text) => {
-                handleIncomingBadge(text);
+// 2. الموظف "يتصل" (يولد QR)
+async function makeEmployeeCall() {
+    // التأكد أن الموظف كتب 6 أرقام
+    if (empInputCode.length < 6) {
+        toast("يرجى إدخال الكود المكون من 6 أرقام الظاهر عند المدير", "warn");
+        return;
+    }
+
+    if (!isOnline) {
+        toast("يجب أن تكون متصلاً بالإنترنت لاستخدام ميزة الاتصال الرقمي", "error");
+        return;
+    }
+
+    toast("جاري التحقق من الكود...", "info");
+
+    // جلب الكود الصحيح من قاعدة البيانات
+    db.ref('current_session_code').once('value').then((snapshot) => {
+        const correctCode = snapshot.val();
+
+        if (empInputCode === correctCode) {
+            // الكود صحيح! سجل البصمة
+            const now = new Date();
+            const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            const today = TODAY_STR();
+
+            // التحقق هل سجل دخول أم خروج
+            db.ref(`users/${ME.username}/attendance/${today}`).once('value').then((attSnap) => {
+                const data = attSnap.val() || {};
+                
+                if (!data.clockIn) {
+                    // تسجيل دخول
+                    processDigitalPunch('in', time, today);
+                } else if (!data.clockOut) {
+                    // تسجيل خروج
+                    processDigitalPunch('out', time, today);
+                } else {
+                    toast("أنت مسجل حضور وانصراف بالفعل اليوم", "warn");
+                }
             });
-        });
-        
-        toast("المحطة جاهزة لاستقبال الموظفين", "success");
-    } else {
-        // إغلاق الكاميرا
-        stationScanner.stop().then(() => {
-            stationScanner = null;
-            reader.classList.add('hidden');
-            toast("تم إغلاق المحطة", "info");
-        });
-    }
-}
 
-// 3. وظيفة معالجة البصمة (موجودة مرة واحدة فقط)
-function handleIncomingBadge(text) {
-    const p = text.split('|');
-    
-    // التأكد إن الكود يخص نظام الشماع
-    if (p[0] === "SHAMAA_BADGE") {
-        const user = p[1];
-        const punchTime = p[2];
-        const timestamp = parseInt(p[3]);
-
-        // منع الغش: الكود لازم يكون تم توليده في آخر دقيقتين فقط
-        if (Date.now() - timestamp > 120000) {
-            toast("الكود منتهي الصلاحية! اطلب من الموظف تحديث الكود", "error");
-            return;
+        } else {
+            toast("الكود غير صحيح أو منتهي الصلاحية", "error");
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
         }
+    });
+}
 
-        const today = TODAY_STR();
+// دالة تنفيذ البصمة بعد نجاح الكود
+function processDigitalPunch(type, time, date) {
+    const upd = {};
+    if (type === 'in') {
+        upd.clockIn = time;
+        upd.status = 'Present';
+        upd.via = 'Digital_Call';
+        upd.date = date;
+    } else {
+        upd.clockOut = time;
+    }
+
+    db.ref(`users/${ME.username}/attendance/${date}`).update(upd).then(() => {
+        const label = type === 'in' ? 'حضور' : 'انصراف';
+        showPunchConfirm('success', `تم تسجيل ${label}`, time, "بواسطة الاتصال الرقمي");
+        empInputCode = ""; // تصفير الشاشة
+        document.getElementById('empDialDisplay').textContent = "---";
+    }).catch(() => toast("فشل الاتصال بقاعدة البيانات", "error"));
+}
+
+function handleIncomingCall(text) {
+    const p = text.split('|');
+    if (p[0] === "SHAMAA_CALL") {
+        const user = p[1];
+        const code = p[2];
+        const name = (allUsers[user] || {}).realName || user;
+
+        isRinging = true;
+        // إظهار شاشة المكالمة
+        document.getElementById('callerName').textContent = name;
+        document.getElementById('incomingCallUI').classList.remove('hidden');
         
-        // التسجيل في الداتابيز (بيتم من جهاز المدير اللي فيه إنترنت)
-        db.ref(`users/${user}/attendance/${today}`).update({
-            clockIn: punchTime,
-            status: 'Present',
-            date: today,
-            via: 'Manager_Station_PC' // توثيق إن البصمة تمت عند المدير
-        }).then(() => {
-            // صوت "تيت" للنجاح
-            const beep = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-            beep.play().catch(() => {}); // تجاوز حماية المتصفح للصوت
+        // تشغيل صوت رنة تليفون
+        const ringtone = new Audio('https://assets.mixkit.co/active_storage/sfx/1350/1350-preview.mp3');
+        ringtone.loop = true;
+        ringtone.play();
+
+        // الرد أوتوماتيك بعد ثانيتين وتسجيل البصمة
+        setTimeout(() => {
+            const today = TODAY_STR();
+            const punchTime = new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
             
-            toast(`تم تسجيل بصمة الموظف: ${user}`, "success");
-            
-            // اهتزاز خفيف لو المدير شغال من موبايل
-            if (navigator.vibrate) navigator.vibrate(150);
-        }).catch(err => {
-            toast("خطأ في الاتصال بالسيرفر", "error");
-        });
+            db.ref(`users/${user}/attendance/${today}`).update({
+                clockIn: punchTime, status: 'Present', via: 'Digital_Call', date: today
+            }).then(() => {
+                ringtone.pause();
+                toast("تم تسجيل البصمة بنجاح", "success");
+                // إخفاء المكالمة والرجوع للمسح
+                setTimeout(() => {
+                    document.getElementById('incomingCallUI').classList.add('hidden');
+                    isRinging = false;
+                    empInputCode = ""; // تصفير كود الموظف
+                }, 2000);
+            });
+        }, 2000);
     }
 }
+
+// تشغيل اللوحة فوراً
+const originalDash = enterDashboard;
+enterDashboard = function() {
+    originalDash();
+    initEmpDialer();
+};
 </script>
 </body>
 </html>
