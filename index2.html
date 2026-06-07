@@ -377,24 +377,17 @@ table{min-width:500px}
             </div>
         </div>
 
-        <!-- قسم الادمن / السكينر -->
-        <div id="adminSection" class="hidden" style="margin-top:10px;">
-            
-            <!-- زرار فتح الشاشة المستقلة -->
-            <div style="margin-bottom: 20px;">
-                <button class="btn btn-accent btn-full btn-lg" onclick="window.open('display.html', '_blank')" style="height: 70px; border-radius: 15px;">
-                    <i class="fa-solid fa-display" style="margin-left: 10px;"></i> فتح شاشة عرض الـ QR (تابلت/شاشة خارجية)
-                </button>
-            </div>
-
-            <div class="admin-fast-scan" style="margin-bottom: 20px;">
-                <button id="stationModeBtn" class="btn btn-success btn-full btn-lg" onclick="toggleStationMode()" style="height: 80px; border-radius: 15px;">
-                    <i class="fa-solid fa-tower-broadcast" style="margin-left: 10px;"></i> فتح محطة استقبال البصمات للأوفلاين
-                </button>
-                <div style="text-align: center; margin-top: 8px; color: var(--text-dim); font-size: 0.8rem;">
-                    وجّه الكاميرا لكود الموظف اللي معاهش نت عشان ترفع بصمته فوراً
-                </div>
-            </div>
+        <div class="admin-fast-scan" style="margin-bottom: 20px;">
+    <button id="stationModeBtn" class="btn btn-success btn-full btn-lg" onclick="toggleStationMode()" style="height: 80px; border-radius: 15px;">
+        <i class="fa-solid fa-tower-broadcast" style="margin-left: 10px;"></i> فتح محطة استقبال البصمات للأوفلاين
+    </button>
+    <!-- أضف السطر التالي هنا مباشرة -->
+    <div id="reader" class="hidden" style="width: 100%; max-width: 400px; margin: 15px auto; border-radius: 15px; overflow: hidden; border: 3px solid var(--danger);"></div>
+    
+    <div style="text-align: center; margin-top: 8px; color: var(--text-dim); font-size: 0.8rem;">
+        وجّه الكاميرا لكود الموظف اللي معاهش نت عشان ترفع بصمته فوراً
+    </div>
+</div>
 
             <div class="admin-qr-box">
                 <div style="font-weight:700;margin-bottom:12px;color:var(--accent);"><i class="fa-solid fa-shield-halved"></i> كود QR للبصمة (يتغير كل 15 ثانية)</div>
@@ -699,52 +692,43 @@ function toggleStationMode() {
     const reader = document.getElementById('reader');
     const btn = document.getElementById('stationModeBtn');
     
-    // إذا كان السكانر مفتوحاً بالفعل، نقوم بإغلاقه
-    if (stationScanner) {
-        stopStationScanner();
-        return;
-    }
+    if (!stationScanner) {
+        // إذا كان سكانر الموظف يعمل، نغلقه أولاً
+        if (mainScanner) stopMainScanner();
 
-    // إغلاق أي سكانر آخر مفتوح لتجنب التعارض
-    stopMainScanner(); 
+        // إظهار عنصر الكاميرا
+        reader.classList.remove('hidden');
+        reader.style.display = 'block'; // للتأكيد على الظهور
+        
+        stationScanner = new Html5Qrcode("reader");
+        
+        const config = { 
+            fps: 20, 
+            qrbox: { width: 250, height: 250 },
+            aspectRatio: 1.0 
+        };
 
-    // إظهار حاوية الكاميرا
-    reader.classList.remove('hidden');
-    
-    // تهيئة السكانر الجديد
-    stationScanner = new Html5Qrcode("reader");
-    
-    const config = { 
-        fps: 20, // سرعة المسح في الثانية
-        qrbox: { width: 280, height: 280 }, // حجم مربع المسح
-        aspectRatio: 1.0 
-    };
-
-    // بدء تشغيل الكاميرا الخلفية
-    stationScanner.start(
-        { facingMode: "environment" }, 
-        config, 
-        (text) => {
-            // عند نجاح القراءة
-            handleContinuousScan(text);
-        }
-    ).then(() => {
-        toast("المحطة جاهزة.. وجّه الكاميرا لكود الموظف", "success");
-        // تغيير شكل الزر للإشارة أنه قيد العمل
-        if (btn) {
+        stationScanner.start(
+            { facingMode: "environment" }, 
+            config, 
+            (text) => { handleContinuousScan(text); }
+        ).then(() => {
+            toast("محطة الاستقبال تعمل الآن", "success");
             btn.innerHTML = '<i class="fa-solid fa-stop" style="margin-left: 10px;"></i> إيقاف محطة الاستقبال';
             btn.classList.replace('btn-success', 'btn-danger');
-        }
-        // التمرير تلقائياً للكاميرا لسهولة الرؤية
-        reader.scrollIntoView({ behavior: 'smooth' });
-    }).catch((err) => {
-        console.error(err);
-        toast("تعذر فتح الكاميرا، تأكد من إعطاء الصلاحية", "error");
+            // النزول تلقائياً لمكان الكاميرا
+            reader.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }).catch((err) => {
+            toast("فشل فتح الكاميرا", "error");
+            reader.classList.add('hidden');
+            stationScanner = null;
+        });
+    } else {
+        stopStationScanner();
         reader.classList.add('hidden');
-        stationScanner = null;
-    });
+        reader.style.display = 'none';
+    }
 }
-
 // وظيفة التعامل مع الكود المقروء من الموظف
 function handleContinuousScan(text) {
     const now = Date.now();
