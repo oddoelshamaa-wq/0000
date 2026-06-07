@@ -935,24 +935,19 @@ function enterDashboard() {
     document.getElementById('dashName').textContent = ME.realName || ME.username;
     
     const isAdmin = ME.role === 'admin';
-    
     document.getElementById('adminSection').classList.toggle('hidden', !isAdmin);
     document.getElementById('empView').classList.toggle('hidden', isAdmin);
     
-    // --- التعديل هنا ---
     if (isAdmin) {
-        // لو مدير، شغل توليد الأرقام بدل الـ QR
         startAdminCodeTimer(); 
-        
         fillUserSelects();
         fillReportEmpFilter();
         fillManualBindSelect();
         initReportDates('thisWeek');
     } else {
-        // لو موظف، شغل لوحة المفاتيح بتاعته
+        // تشغيل لوحة الأرقام للموظف فور دخوله
         initEmpDialer();
     }
-    // ------------------
 
     renderWeekCalendar();
     renderEmpSchedule();
@@ -1338,20 +1333,51 @@ window.addEventListener('load', () => {
     checkPersistentLogin();
 });
 // 1. إعداد لوحة مفاتيح الموظف
-let empInputCode = "";
+// 1. تأكد أن هذا السطر موجود في بداية منطقة السكريبت (فوق خالص)
+let empInputCode = ""; 
+
+// 2. استبدل الدالة بالنسخة دي المحسنة
 function initEmpDialer() {
     const pad = document.getElementById('dialPad');
-    if(!pad) return;
-    pad.innerHTML = "";
-    ['1','2','3','4','5','6','7','8','9','*','0','#'].forEach(num => {
+    const display = document.getElementById('empDialDisplay');
+    if(!pad || !display) return;
+
+    pad.innerHTML = ""; // مسح اللوحة القديمة
+    empInputCode = ""; // تصفير الكود عند البدء
+    display.textContent = "---"; // إعادة الشاشة للحالة الأصلية
+    display.style.color = "#22c55e"; // التأكد من اللون الأخضر
+
+    // ترتيب الزراير زي الصورة (1 2 3 .. إلخ)
+    const keys = ['1','2','3','4','5','6','7','8','9','C','0','←'];
+
+    keys.forEach(num => {
         const btn = document.createElement('button');
         btn.className = "btn btn-ghost";
-        btn.style.height = "60px"; btn.style.fontSize = "1.5rem";
+        btn.style.height = "60px"; 
+        btn.style.fontSize = "1.5rem";
+        btn.style.border = "1px solid var(--border)";
+        btn.style.borderRadius = "12px";
+        btn.style.background = "rgba(255,255,255,0.03)";
+        btn.style.color = "white";
         btn.textContent = num;
+
         btn.onclick = () => {
-            if(empInputCode.length < 6) empInputCode += num;
-            document.getElementById('empDialDisplay').textContent = empInputCode;
-            new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3').play().catch(()=>{});
+            if (num === 'C') {
+                empInputCode = ""; // مسح الكل
+            } else if (num === '←') {
+                empInputCode = empInputCode.slice(0, -1); // مسح آخر رقم
+            } else {
+                if (empInputCode.length < 6) {
+                    empInputCode += num; // إضافة الرقم
+                }
+            }
+
+            // تحديث الشاشة فوراً
+            display.textContent = empInputCode || "---";
+            display.style.color = "#22c55e"; // الحفاظ على اللون الأخضر أثناء الكتابة
+            
+            // اهتزاز خفيف للموبايل عند الضغط (لو مدعوم)
+            if(navigator.vibrate) navigator.vibrate(40);
         };
         pad.appendChild(btn);
     });
@@ -1361,25 +1387,29 @@ function initEmpDialer() {
 // دالة الموظف لتحويل كود المدير إلى "كود تأكيد" فريد
 function makeEmployeeCall() {
     if (empInputCode.length < 6) {
-        toast("أدخل الكود المكون من 6 أرقام الموضح عند المدير", "warn");
+        toast("أدخل الـ 6 أرقام اللي ظاهرة عند المدير", "warn");
         return;
     }
 
-    // معادلة حسابية تعتمد على كود المدير + اسم الموظف + تاريخ اليوم
-    // هذه المعادلة تضمن أن الكود الناتج لا يعمل إلا لهذا الموظف فقط وفي هذه اللحظة فقط
+    // معادلة حسابية سرية (كود المدير + اسم الموظف + تاريخ اليوم)
     const userSeed = ME.username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const dateSeed = new Date().getDate();
     
-    // حساب كود التأكيد
-    let confirmationCode = (parseInt(empInputCode) + userSeed + dateSeed) * 7;
-    let finalCode = (confirmationCode % 1000000).toString().padStart(6, '0');
+    // إنتاج كود التأكيد
+    let confirmationResult = ((parseInt(empInputCode) + userSeed + dateSeed) * 7) % 1000000;
+    let finalOrangeCode = confirmationResult.toString().padStart(6, '0');
 
-    // إظهار الكود الناتج للموظف بلون مختلف
+    // إظهار الكود الناتج باللون البرتقالي فوراً
     const display = document.getElementById('empDialDisplay');
-    display.style.color = "#f59e0b"; // لون برتقالي للكود الناتج
-    display.textContent = finalCode;
+    display.style.color = "#f59e0b"; // برتقالي
+    display.style.fontSize = "2.2rem";
+    display.textContent = finalOrangeCode;
 
-    toast("أملِ الكود الظاهر باللون البرتقالي للمدير الآن", "success");
+    // تصفير الذاكرة الداخلية عشان الموظف ميعرفش يغير الرقم
+    empInputCode = ""; 
+
+    toast("أملِ الكود البرتقالي الظاهر الآن للمدير", "success");
+    if(navigator.vibrate) navigator.vibrate(200);
 }
 
 // دالة تنفيذ البصمة بعد نجاح الكود
@@ -1454,21 +1484,19 @@ function verifyEmployeeOfflineCode() {
     }
 
     const currentAdminCode = getSyncCode(0);
-    const prevAdminCode = getSyncCode(-1); // للسماح بفرق وقت بسيط
+    const prevAdminCode = getSyncCode(-1); // سماح بـ 15 ثانية تأخير
     const dateSeed = new Date().getDate();
     let foundUser = null;
 
-    // البحث في جميع الموظفين المسجلين
+    // السيستم بيلف على كل الموظفين يشوف الكود ده يخص مين
     Object.keys(allUsers).forEach(u => {
         if (ADMINS.includes(u)) return;
-
         const userSeed = u.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
         
-        // حساب الكود المتوقع لهذا الموظف
-        const checkCode = (code) => ((parseInt(code) + userSeed + dateSeed) * 7) % 1000000;
+        const calc = (adminCode) => ((parseInt(adminCode) + userSeed + dateSeed) * 7) % 1000000;
 
-        if (typedCode == checkCode(currentAdminCode).toString().padStart(6, '0') || 
-            typedCode == checkCode(prevAdminCode).toString().padStart(6, '0')) {
+        if (typedCode == calc(currentAdminCode).toString().padStart(6, '0') || 
+            typedCode == calc(prevAdminCode).toString().padStart(6, '0')) {
             foundUser = u;
         }
     });
@@ -1478,29 +1506,30 @@ function verifyEmployeeOfflineCode() {
         const punchTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
         const today = TODAY_STR();
         
-        // التحقق هل هو دخول أم خروج
+        // هل هو دخول ولا خروج؟
         const att = (allUsers[foundUser].attendance && allUsers[foundUser].attendance[today]) || {};
         let updateData = {};
         
         if (!att.clockIn) {
-            updateData = { clockIn: punchTime, status: 'Present', date: today, via: 'Offline_Voice_Auth' };
-            toast(`تم تسجيل دخول: ${allUsers[foundUser].realName}`, "success");
+            updateData = { clockIn: punchTime, status: 'Present', date: today, via: 'Voice_Auth' };
+            toast("تم تسجيل دخول: " + (allUsers[foundUser].realName || foundUser), "success");
         } else if (!att.clockOut) {
             updateData = { clockOut: punchTime };
-            toast(`تم تسجيل انصراف: ${allUsers[foundUser].realName}`, "success");
+            toast("تم تسجيل انصراف: " + (allUsers[foundUser].realName || foundUser), "success");
         } else {
-            toast("الموظف مسجل بالفعل اليوم", "warn");
+            toast("الموظف مسجل حضور وانصراف بالفعل", "warn");
             return;
         }
 
-        // رفع البيانات للسيرفر فوراً من موبايل المدير
+        // رفع البيانات فوراً من نت المدير
         db.ref(`users/${foundUser}/attendance/${today}`).update(updateData);
-        document.getElementById('offlineConfirmInput').value = ''; // تصفير الخانة
-        new Audio('https://assets.mixkit.co/active_storage/sfx/1350/1350-preview.mp3').play();
+        document.getElementById('offlineConfirmInput').value = ''; // مسح الخانة
+        new Audio('https://assets.mixkit.co/active_storage/sfx/1350/1350-preview.mp3').play().catch(()=>{});
     } else {
-        toast("كود غير صحيح أو انتهت صلاحيته", "error");
+        toast("كود غلط أو انتهت صلاحيته", "error");
     }
 }
+
 </script>
 </body>
 </html>
