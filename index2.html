@@ -15,8 +15,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2991/2991174.png">
-    <!-- صلاحية قراءة الواي فاي للمتصفح -->
-    <meta name="permissions" content="wifi">
 <style>
 :root{--bg:#060a13;--card:rgba(15,23,42,0.75);--card-solid:#0f172a;--primary:#0ea5e9;--primary-glow:rgba(14,165,233,0.25);--accent:#f59e0b;--accent-glow:rgba(245,158,11,0.2);--success:#10b981;--success-glow:rgba(16,185,129,0.25);--danger:#f43f5e;--danger-glow:rgba(244,63,94,0.2);--text:#e2e8f0;--text-dim:#64748b;--border:rgba(255,255,255,0.07);--radius:18px;--off-color:#8b5cf6;--off-glow:rgba(139,92,246,0.25)}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -245,8 +243,6 @@ td:last-child{border-radius:0 10px 10px 0}
 .network-token-input{display:flex;gap:10px;align-items:flex-end;margin-bottom:20px;padding:16px;background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.2);border-radius:14px;}
 .network-token-input .form-group{margin:0; flex:1;}
 
-.wifi-status-admin{padding:12px;border-radius:12px;margin-bottom:16px;font-size:0.85rem;font-weight:700;text-align:center;}
-
 @media(max-width:640px){
 .container{padding:12px 10px}
 .glass{padding:20px 16px}
@@ -372,14 +368,12 @@ table{min-width:500px}
             <div class="admin-qr-box" style="padding: 40px 20px;">
                 <div style="font-size: 1.5rem; font-weight: 900; margin-bottom: 20px; color: var(--primary);"><i class="fa-solid fa-shield-halved"></i> محطة البصمة</div>
                 
-                <div id="adminWifiStatus" class="wifi-status-admin"></div>
-
                 <div class="network-token-input">
                     <div class="form-group">
                         <label><i class="fa-solid fa-network-wired"></i> اسم الشبكة / الموقع</label>
-                        <input type="text" id="networkNameInput" class="form-input" placeholder="هيتكتب تلقائي من الواي فاي" readonly>
+                        <input type="text" id="networkNameInput" class="form-input" placeholder="مثال: المكتب_الرئيسي" value="الشبكة_الرئيسية">
                     </div>
-                    <button class="btn btn-accent" onclick="requestWifiInfo()" style="height:50px; white-space:nowrap;"><i class="fa-solid fa-wifi"></i> اتصال</button>
+                    <button class="btn btn-accent" onclick="startQRRotation()" style="height:50px; white-space:nowrap;"><i class="fa-solid fa-sync"></i> تفعيل وتدوير</button>
                 </div>
 
                 <div style="font-size: 0.9rem; color: var(--accent); margin-bottom: 20px;"><i class="fa-solid fa-info-circle"></i> الكود بيتغير كل 30 ثانية عشان منع التصوير. اسم الشبكة هيتم تسجيله مع البصمة.</div>
@@ -550,7 +544,7 @@ const db=firebase.database();
 
 const ADMINS=['mahmoud','abutamim','ahmed'];
 const EMP_QR_PREFIX="SHAMAA_EMP";
-const ADMIN_QR_PREFIX="SHAMAA_NET"; 
+const ADMIN_QR_PREFIX="SHAMAA_NET"; // تعديل: بادئة الكود الجديدة
 const DAY_NAMES=['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'];
 const MONTH_NAMES=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
 
@@ -558,7 +552,6 @@ let ME=null, allUsers={}, allSched={}, corrTarget={}, weekOffset=0;
 let bindCheckTimer=null, lastShiftReport=null, empScanner=null, mainScanner=null;
 let isScanning=false, isOnline=navigator.onLine, firebaseReady=false;
 let currentAttDate=TODAY_STR(), qrInterval=null, qrTimerInterval=null, currentTokenLife=30;
-let currentWifiSSID = '---';
 
 function TODAY_STR(){return new Date().toISOString().split('T')[0]}
 const TODAY=TODAY_STR();
@@ -654,53 +647,7 @@ function renderEmpSchedule(){
 
 function generateEmpQR(containerId,username,realName){const data=`${EMP_QR_PREFIX}|${username}|${DEV_ID}|${realName||username}`;const c=document.getElementById(containerId);c.innerHTML='';try{new QRCode(c,{text:data,width:180,height:180,colorDark:"#0f172a",colorLight:"#ffffff"});}catch(e){}}
 
-// ===== نظام الـ WiFi و الـ QR المتغير =====
-async function requestWifiInfo() {
-    const statusBox = document.getElementById('adminWifiStatus');
-    const netInput = document.getElementById('networkNameInput');
-    
-    try {
-        // Web WiFi API - بيجيب اسم الشبكة اللي الموبايل متصل بيها
-        if ('wifi' in navigator) {
-            const wifi = await navigator.wifi;
-            // محاولة قراءة الـ SSID
-            const ssid = wifi.ssid || wifi.SSID;
-            if (ssid) {
-                currentWifiSSID = ssid.replace(/"/g, ''); // إزالة علامات التنصيص
-                netInput.value = currentWifiSSID;
-                statusBox.innerHTML = `<i class="fa-solid fa-wifi"></i> متصل بشبكة: <strong>${currentWifiSSID}</strong>`;
-                statusBox.style.background = "rgba(16,185,129,0.1)";
-                statusBox.style.border = "1px solid rgba(16,185,129,0.3)";
-                statusBox.style.color = "var(--success)";
-                startQRRotation();
-                return;
-            }
-        }
-        
-        // لو الـ API مش متاح أو رفض صلاحية الموقع
-        statusBox.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> المتصفح منع قراءة اسم الشبكة. اكتب اسم الشبكة يدوياً أو افتح الواي فاي`;
-        statusBox.style.background = "rgba(245,158,11,0.1)";
-        statusBox.style.border = "1px solid rgba(245,158,11,0.3)";
-        statusBox.style.color = "var(--accent)";
-        netInput.readOnly = false;
-        netInput.focus();
-        
-        // محاولة فتح إعدادات الواي فاي على الأندرويد
-        try {
-            window.open('intent://#Intent;action=android.settings.WIFI_SETTINGS;end', '_blank');
-        } catch(e) {
-            // فشل فتح الإعدادات
-        }
-        
-    } catch (err) {
-        netInput.readOnly = false;
-        statusBox.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> خطأ في قراءة الواي فاي. اكتب اسم الشبكة يدوياً`;
-        statusBox.style.background = "rgba(244,63,94,0.1)";
-        statusBox.style.border = "1px solid rgba(244,63,94,0.3)";
-        statusBox.style.color = "var(--danger)";
-    }
-}
-
+// ===== نظام الـ QR المتغير (Network Token) =====
 function generateToken() {
     return Math.random().toString(36).substr(2, 8).toUpperCase();
 }
@@ -711,28 +658,29 @@ function startQRRotation() {
         toast('لو سمحت اكتب اسم الشبكة/الموقع الأول', 'warn');
         return;
     }
-    currentWifiSSID = netName;
     
     if (qrInterval) clearInterval(qrInterval);
     if (qrTimerInterval) clearInterval(qrTimerInterval);
     
-    updateAdminQR(); 
-    qrInterval = setInterval(updateAdminQR, 30000); 
+    updateAdminQR(); // توليد أول كود
+    qrInterval = setInterval(updateAdminQR, 30000); // يتجدد كل 30 ثانية
     
     toast('تم تفعيل الكود المتغير بنجاح', 'success');
 }
 
 function updateAdminQR() {
-    const netName = currentWifiSSID || document.getElementById('networkNameInput').value.trim() || 'غير_معروف';
+    const netName = document.getElementById('networkNameInput').value.trim() || 'الشبكة_الرئيسية';
     const token = generateToken();
     const timestamp = Date.now();
     
+    // صيغة الكود: بادئة | اسم الشبكة | الرمز العشوائي | الوقت
     const qrData = `${ADMIN_QR_PREFIX}|${netName}|${token}|${timestamp}`;
     
     const container = document.getElementById('qrcode');
     container.innerHTML = '';
     new QRCode(container, {text: qrData, width: 280, height: 280, correctLevel: QRCode.CorrectLevel.H});
     
+    // إعادة تشغيل العداد التنازلي
     currentTokenLife = 30;
     if(qrTimerInterval) clearInterval(qrTimerInterval);
     qrTimerInterval = setInterval(() => {
@@ -756,26 +704,31 @@ function updateAdminQR() {
 function processScannedQR(text) {
     const parts = text.split('|');
     
+    // لو الكود خاص ببصمة المدير والشبكة
     if (parts[0] === ADMIN_QR_PREFIX && parts.length === 4) {
         const netName = parts[1];
         const token = parts[2];
         const timestamp = parseInt(parts[3]);
         
+        // التحقق إن الكود لسه صالح (أقل من دقيقتين عشان يسمح لتأخير النت)
         const now = Date.now();
-        if (now - timestamp > 120000) { 
+        if (now - timestamp > 120000) { // دقيقتين
             toast('الكود ده قديم، وجّه الكاميرا لشاشة المدير من تاني', 'error');
             return;
         }
         
+        // تسجيل البصمة باسم الشبكة دي
         processPunch(netName);
         return;
     }
     
+    // لو الكود خاص بربط الأجهزة
     if (parts[0] === EMP_QR_PREFIX) {
         toast('ده كود ربط أجهزة، مينفعش تبصم بيه. لازم تمسح كود شاشة المدير', 'warn');
         return;
     }
     
+    // لو الكود مش معروف
     toast('الكود غير صالح، وجّه الكاميرا لكود المدير', 'error');
 }
 
@@ -800,11 +753,12 @@ function processPunch(networkName) {
     }
 }
 
+// ===== دوال الأوفلاين والمزامنة المعدلة لتشمل اسم الشبكة =====
 function savePunchOffline(type, time, date, networkName){
     let la=getLocalAttendance(ME.username);if(!la[date])la[date]={status:'Present',date:date};
     if(type==='in'){la[date].clockIn=time;la[date].status='Present';}else{la[date].clockOut=time;}
     la[date]._offline=true;
-    la[date].networkToken = networkName; 
+    la[date].networkToken = networkName; // تسجيل اسم الشبكة/الموقع
     LS.set('att_'+ME.username,la);
     
     let q=LS.get('sync_queue',[]);q.push({username:ME.username,date:date,time:time,type:type,deviceId:DEV_ID,networkToken:networkName,timestamp:Date.now()});LS.set('sync_queue',q);
@@ -831,6 +785,7 @@ async function syncOfflinePunches(){
 }
 function syncLocalAttToFirebase(u){setTimeout(syncOfflinePunches,2000);}
 
+// ===== باقي الدوال الأصلية =====
 function stopEmpScanner(){if(empScanner){empScanner.stop().then(()=>{document.getElementById('empReader').classList.add('hidden');empScanner=null;}).catch(()=>{document.getElementById('empReader').classList.add('hidden');empScanner=null;});}}
 function startEmpScan(){stopEmpScanner();const r=document.getElementById('empReader');r.classList.remove('hidden');document.getElementById('scanEmpResult').innerHTML='';empScanner=new Html5Qrcode("empReader");empScanner.start({facingMode:"environment"},{fps:10,qrbox:{width:240,height:240}},(text)=>{stopEmpScanner();handleEmpScan(text);},()=>{}).catch(()=>{r.classList.add('hidden');empScanner=null;toast('تعذر فتح الكاميرا','error');});}
 function handleEmpScan(text){const p=text.split('|');if(p.length<4||p[0]!==EMP_QR_PREFIX){toast('الكود ده مش QR موظف صحيح','error');return;}const su=p[1],sd=p[2],sn=p[3];if(!allUsers[su]){document.getElementById('scanEmpResult').innerHTML=`<div class="scan-emp-result" style="background:rgba(244,63,94,0.08);border-color:var(--danger);"><div class="ser-name" style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> مستخدم غير موجود</div></div>`;return;}const isBound=(allUsers[su].approvedDevice||'')===sd;let h=`<div class="scan-emp-result"><div class="ser-name"><i class="fa-solid fa-user-check"></i> ${sn}</div><div class="ser-dev"><i class="fa-solid fa-mobile-screen-button" style="margin-left:4px;"></i> ${sd}</div>`;if(isBound){h+=`<div style="color:var(--success);font-weight:700;"><i class="fa-solid fa-circle-check"></i> مربط بالفعل</div>`;}else{h+=`<div style="display:flex;gap:8px;justify-content:center;margin-top:12px;"><button class="btn btn-success btn-sm" onclick="requestBindFromAdmin('${su}','${sd}','${sn}')"><i class="fa-solid fa-link"></i> إرسال طلب ربط</button></div>`;}h+='</div>';document.getElementById('scanEmpResult').innerHTML=h;}
@@ -846,7 +801,7 @@ function updateAttDateLabel(){const d=new Date(currentAttDate);const label=docum
 function navAttDate(dir){const d=new Date(currentAttDate);d.setDate(d.getDate()+dir);currentAttDate=d.toISOString().split('T')[0];updateAttDateLabel();renderAttTable();}
 function goToday(){currentAttDate=TODAY;updateAttDateLabel();renderAttTable();}
 
-function renderAttTable(){const date=currentAttDate,tb=document.getElementById('attBody');if(!tb)return;tb.innerHTML='';const isAdmin=ME&&ME.role==='admin';Object.keys(allUsers).forEach(u=>{if(ADMINS.includes(u))return;const user=allUsers[u]||{},att=user.attendance&&user.attendance[date]?user.attendance[date]:null;const isOff=att&&att._offline;const srcBadge=isOff?'<span class="badge badge-off" style="font-size:0.65rem;">أوفلاين</span>':'<span class="badge badge-ok" style="font-size:0.65rem;">أونلاين</span>';let statusBadge = att ? (att.status==='Present' ? '<span class="badge badge-ok">حاضر</span>' : '<span class="badge badge-no">غائب</span>') : '<span class="badge badge-wait">في الانتظار</span>';const netToken = att ? (att.networkToken || '---') : '---';tb.innerHTML+=`<tr><td>${user.realName||u}</td><td style="font-size:0.8rem; color:var(--accent);">${netToken}</td><td>${statusBadge}</td><td>${att?(att.clockIn||'--'):'--'}</td><td>${att?(att.clockOut||'--'):'--'}</td><td>${att?srcBadge:'--'}</td><td>${isAdmin?`<button class="edit-btn" onclick="openCorr('${u}','${date}')"><i class="fa-solid fa-pen"></i></button>`:'--'}</td></tr>`;});}
+function renderAttTable(){const date=currentAttDate,tb=document.getElementById('attBody');if(!tb)return;tb.innerHTML='';const isAdmin=ME&&ME.role==='admin';Object.keys(allUsers).forEach(u=>{if(ADMINS.includes(u))return;const user=allUsers[u]||{},att=user.attendance&&user.attendance[date]?user.attendance[date]:null;const isOff=att&&att._offline;const srcBadge=isOff?'<span class="badge badge-off" style="font-size:0.65rem;">أوفلاين</span>':'<span class="badge badge-ok" style="font-size:0.65rem;">أونلاين</span>';let statusBadge = att ? (att.status==='Present' ? '<span class="badge badge-ok">حاضر</span>' : '<span class="badge badge-no">غائب</span>') : '<span class="badge badge-wait">في الانتظار</span>';const netToken = att ? (att.networkToken || '--') : '--';tb.innerHTML+=`<tr><td>${user.realName||u}</td><td style="font-size:0.8rem; color:var(--accent);">${netToken}</td><td>${statusBadge}</td><td>${att?(att.clockIn||'--'):'--'}</td><td>${att?(att.clockOut||'--'):'--'}</td><td>${att?srcBadge:'--'}</td><td>${isAdmin?`<button class="edit-btn" onclick="openCorr('${u}','${date}')"><i class="fa-solid fa-pen"></i></button>`:'--'}</td></tr>`;});}
 
 function weekKey(dateStr){const d=new Date(dateStr);d.setDate(d.getDate()-((d.getDay()+1)%7));return d.toISOString().split('T')[0];}
 function fillUserSelects(){const s=document.getElementById('shUser');s.innerHTML='';Object.keys(allUsers).forEach(u=>{if(!ADMINS.includes(u))s.innerHTML+=`<option value="${u}">${allUsers[u].realName||u}</option>`;});}
@@ -915,7 +870,7 @@ function enterDashboard(){
     showScreen('screenDash');document.getElementById('dashName').textContent=ME.realName||ME.username;
     const isAdmin=ME.role==='admin';document.getElementById('adminSection').classList.toggle('hidden',!isAdmin);document.getElementById('empView').classList.toggle('hidden',isAdmin);document.getElementById('btnMyQr').classList.toggle('hidden',isAdmin);document.getElementById('empScheduleCard').classList.toggle('hidden',isAdmin);
     currentAttDate=TODAY;updateAttDateLabel();
-    if(isAdmin){requestWifiInfo();fillUserSelects();fillReportEmpFilter();fillManualBindSelect();initReportDates('thisWeek');}
+    if(isAdmin){startQRRotation();fillUserSelects();fillReportEmpFilter();fillManualBindSelect();initReportDates('thisWeek');}
     renderWeekCalendar();renderEmpSchedule();renderAttTable();renderShiftsTable();updateNetUI();updateSyncBanner();
     if(!isAdmin&&!ME._offlineMode)listenToMyStatus();if(!isAdmin&&ME._offlineMode)renderEmpStatusLocal();if(!isAdmin)listenToMySchedule();
 }
@@ -927,7 +882,7 @@ function renderEmpStatusLocal(){const la=getLocalAttendance(ME.username);renderE
 function renderEmpStatusBar(d){
     const bar=document.getElementById('statusBar');if(!bar)return;const la=getLocalAttendance(ME.username);const data=d||la[TODAY]||null;
     if(data){const hi=!!data.clockIn,ho=!!data.clockOut;const offBadge=data._offline?' <span class="badge badge-off" style="font-size:0.65rem;">غير مرفوع</span>':'';
-    bar.innerHTML=`<div class="status-chip"><div class="chip-label">الحالة</div><div class="chip-value">${data.status==='Present'?'حاضر':data.status||'--'}${offBadge}</div></div><div class="status-chip"><div class="chip-label">وقت الدخول</div><div class="chip-value">${hi?data.clockIn:'--:--'}</div></div><div class="status-chip"><div class="chip-label">وقت الانصراف</div><div class="chip-value">${ho?data.clockOut:'--:--'}</div></div><div class="status-chip"><div class="chip-label">الشبكة</div><div class="chip-value" style="color:var(--accent);font-size:0.9rem;">${data.networkToken||'---'}</div></div>`;
+    bar.innerHTML=`<div class="status-chip"><div class="chip-label">الحالة</div><div class="chip-value">${data.status==='Present'?'حاضر':data.status||'--'}${offBadge}</div></div><div class="status-chip"><div class="chip-label">وقت الدخول</div><div class="chip-value">${hi?data.clockIn:'--:--'}</div></div><div class="status-chip"><div class="chip-label">وقت الانصراف</div><div class="chip-value">${ho?data.clockOut:'--:--'}</div></div><div class="status-chip"><div class="chip-label">الشبكة</div><div class="chip-value" style="color:var(--accent);font-size:0.9rem;">${data.networkToken||'--'}</div></div>`;
     }else{bar.innerHTML=`<div class="status-chip" style="flex:1;"><div class="chip-label">حالة اليوم</div><div class="chip-value not-yet">لم يتم البصمة بعد</div></div>`;}
 }
 
