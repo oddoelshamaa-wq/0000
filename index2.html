@@ -168,8 +168,6 @@ td:last-child{border-radius:0 10px 10px 0}
 
 .admin-qr-box{text-align:center;padding:24px;background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:16px;margin-bottom:20px}
 #qrcode{background:#fff;padding:16px;border-radius:14px;display:inline-block;margin-bottom:12px}
-.qr-timer{font-size:0.85rem;font-weight:700;color:var(--accent);margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px}
-.qr-timer i{animation:spin 2s linear infinite}
 
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:none;justify-content:center;align-items:center;z-index:5000;padding:20px}
 .modal-overlay.open{display:flex}
@@ -272,7 +270,6 @@ table{min-width:500px}
 </div>
 
 <div class="container">
-    <!-- تسجيل الدخول -->
     <div id="screenLogin" class="screen">
         <div class="glass" style="max-width:420px;margin:60px auto;">
             <div style="text-align:center;margin-bottom:30px;">
@@ -296,7 +293,6 @@ table{min-width:500px}
         </div>
     </div>
 
-    <!-- شاشة ربط الجهاز -->
     <div id="screenBind" class="screen hidden">
         <div class="glass" style="max-width:500px;margin:40px auto;">
             <div class="bind-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
@@ -315,7 +311,6 @@ table{min-width:500px}
         </div>
     </div>
 
-    <!-- جهاز مرفوض -->
     <div id="screenRejected" class="screen hidden">
         <div class="glass" style="max-width:460px;margin:60px auto;text-align:center;">
             <div style="width:80px;height:80px;border-radius:50%;background:rgba(244,63,94,0.1);border:2px solid var(--danger);display:inline-flex;align-items:center;justify-content:center;font-size:2rem;color:var(--danger);margin-bottom:20px;"><i class="fa-solid fa-ban"></i></div>
@@ -327,7 +322,6 @@ table{min-width:500px}
         </div>
     </div>
 
-    <!-- لوحة التحكم -->
     <div id="screenDash" class="screen hidden">
         <div class="dash-header">
             <div class="user-greet">أهلاً <span id="dashName"></span></div>
@@ -341,7 +335,6 @@ table{min-width:500px}
         <div id="dashNetBar"></div>
         <div class="week-card" id="weekCard"></div>
 
-        <!-- واجهة الموظف -->
         <div id="empView">
             <div class="scan-section" id="scanSection">
                 <button class="scan-main-btn" id="scanMainBtn" onclick="toggleScanner()"><i class="fa-solid fa-camera"></i></button>
@@ -367,7 +360,6 @@ table{min-width:500px}
             </div>
         </div>
 
-        <!-- قسم الادمن -->
         <div id="adminSection" class="hidden" style="margin-top:10px;">
             <div class="admin-qr-box" style="padding: 40px 20px;">
                 <div style="font-size: 1.5rem; font-weight: 900; margin-bottom: 20px; color: var(--primary);"><i class="fa-solid fa-shield-halved"></i> محطة البصمة</div>
@@ -498,7 +490,6 @@ table{min-width:500px}
     </div>
 </div>
 
-<!-- مودال تصحيح -->
 <div id="corrModal" class="modal-overlay" role="dialog" aria-label="تصحيح">
     <div class="modal-box">
         <h3><i class="fa-solid fa-pen-to-square"></i> تصحيح سجل الحضور</h3>
@@ -515,7 +506,6 @@ table{min-width:500px}
     </div>
 </div>
 
-<!-- مودال تفاصيل الشيفت -->
 <div id="shiftDetailModal" class="modal-overlay" role="dialog" aria-label="تفاصيل">
     <div class="modal-box">
         <h3 id="shiftDetailTitle"><i class="fa-solid fa-clipboard-list"></i> تفاصيل المخالفات</h3>
@@ -524,7 +514,6 @@ table{min-width:500px}
     </div>
 </div>
 
-<!-- مودال QR الموظف -->
 <div id="empQrModalOverlay" class="modal-overlay" role="dialog" aria-label="QR الخاص بي">
     <div class="emp-qr-modal-box">
         <div class="eqm-name" id="eqmName">--</div>
@@ -548,7 +537,7 @@ const MONTH_NAMES=['يناير','فبراير','مارس','أبريل','مايو
 let ME=null, allUsers={}, allSched={}, corrTarget={}, weekOffset=0;
 let bindCheckTimer=null, lastShiftReport=null, empScanner=null, mainScanner=null;
 let isScanning=false, isOnline=navigator.onLine, firebaseReady=false;
-let currentAttDate=TODAY_STR(), qrInterval=null, qrCountdownInterval=null, qrSecondsLeft=15;
+let currentAttDate=TODAY_STR(), qrInterval=null;
 
 function TODAY_STR(){return new Date().toISOString().split('T')[0]}
 const TODAY=TODAY_STR();
@@ -620,8 +609,14 @@ function renderWeekCalendar(){
     let daysHTML='';
     days.forEach(d=>{const isPast=d.date<new Date(new Date().setHours(0,0,0,0))&&!d.isToday;
         const dayFormatted=String(d.date.getDate()).padStart(2,'0');const monthFormatted=String(d.date.getMonth()+1).padStart(2,'0');const fullDateStr=`${dayFormatted}/${monthFormatted}`;
-        let st='';if(ME&&ME.role!=='admin'){let att=null;if(allUsers[ME.username]&&allUsers[ME.username].attendance&&allUsers[ME.username].attendance[d.str]){att=allUsers[ME.username].attendance[d.str];}else{const la=getLocalAttendance(ME.username);att=la[d.str]||null;}
-        if(att){if(att.status==='Present'){st=att._offline?`<div class="w-day-status offline"><i class="fa-solid fa-wifi-slash"></i></div>`:`<div class="w-day-status present"><i class="fa-solid fa-check"></i></div>`;}else{st=`<div class="w-day-status absent"><i class="fa-solid fa-xmark"></i></div>`;}}else if(isPast){st=`<div class="w-day-status absent">--</div>`;}else{st=`<div class="w-day-status pending">--</div>`;}}
+        let st='';
+        if(ME&&ME.role!=='admin'){
+            let att=null;
+            if(allUsers[ME.username]&&allUsers[ME.username].attendance&&allUsers[ME.username].attendance[d.str]){att=allUsers[ME.username].attendance[d.str];}else{const la=getLocalAttendance(ME.username);att=la[d.str]||null;}
+            if(att){if(att.status==='Present'){st=att._offline?`<div class="w-day-status offline"><i class="fa-solid fa-wifi-slash"></i></div>`:`<div class="w-day-status present"><i class="fa-solid fa-check"></i></div>`;}else{st=`<div class="w-day-status absent"><i class="fa-solid fa-xmark"></i></div>`;}}
+            // تعديل الاتفاق: لا نعرض Absent تلقائياً للموظف، بل "في الانتظار"
+            else if(isPast){st=`<div class="w-day-status pending">--</div>`;}else{st=`<div class="w-day-status pending">--</div>`;}
+        }
         daysHTML+=`<div class="w-day ${d.isToday?'is-today':''} ${isPast?'is-past':''}"><div class="w-day-name">${d.name}</div><div class="w-day-num" style="font-size:0.9rem;margin-top:5px;">${fullDateStr}</div>${st}</div>`;
     });
     document.getElementById('weekCard').innerHTML=`<div class="week-header"><div class="week-nav"><button class="week-nav-btn" onclick="navigateWeek(-1)"><i class="fa-solid fa-chevron-right"></i></button><div class="week-range"><i class="fa-regular fa-calendar" style="margin-left:6px;"></i>${rangeText}</div><button class="week-nav-btn" onclick="navigateWeek(1)"><i class="fa-solid fa-chevron-left"></i></button>${weekOffset!==0?`<button class="week-nav-btn" onclick="resetWeekView()" style="width:auto;padding:0 12px;font-size:0.75rem;">هذا الأسبوع</button>`:''}</div>${counterText?`<div class="week-day-counter">${counterText}</div>`:''}</div><div class="week-days-row">${daysHTML}</div>`;
@@ -643,8 +638,6 @@ function generateQR(){
     const container=document.getElementById('qrcode');if(!container)return;
     const staticAdminCode=`SHAMAA_ADMIN|${ME.username}`;container.innerHTML='';
     new QRCode(container,{text:staticAdminCode,width:280,height:280,correctLevel:QRCode.CorrectLevel.H});
-    if(qrInterval)clearInterval(qrInterval);if(qrCountdownInterval)clearInterval(qrCountdownInterval);
-    qrInterval=setInterval(()=>{},15000);
 }
 
 function doLogin(){
@@ -667,7 +660,7 @@ function doLogin(){
     }
 }
 
-function doLogout(){ME=null;if(bindCheckTimer){clearInterval(bindCheckTimer);bindCheckTimer=null;}if(qrInterval){clearInterval(qrInterval);qrInterval=null;}if(qrCountdownInterval){clearInterval(qrCountdownInterval);qrCountdownInterval=null;}stopEmpScanner();stopMainScanner();document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';showScreen('screenLogin');updateNetUI();}
+function doLogout(){ME=null;if(bindCheckTimer){clearInterval(bindCheckTimer);bindCheckTimer=null;}if(qrInterval){clearInterval(qrInterval);qrInterval=null;}stopEmpScanner();stopMainScanner();document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';showScreen('screenLogin');updateNetUI();}
 
 function showBindScreen(hasPending){
     if(!isOnline){toast('لازم تكون متصل بالنت عشان تربط الجهاز','warn');return;}
@@ -700,7 +693,7 @@ function renderEmpStatusBar(d){
     }else{bar.innerHTML=`<div class="status-chip" style="flex:1;"><div class="chip-label">حالة اليوم</div><div class="chip-value not-yet">لم يتم البصمة بعد</div></div>`;}
 }
 
-// ===== ميزة إيقاظ الشبكة مؤقتاً لرفع البصمة =====
+// ===== ميزة فتح الشبكة مؤقتاً لرفع البصمة (الاتفاق) =====
 async function temporaryNetworkWakeUp() {
     if ('wakeLock' in navigator) {
         try {
@@ -750,15 +743,15 @@ async function processScannedQR(text){
             savePunchOffline('in', time);
             btn.style.background = 'var(--success)'; btn.innerHTML = '<i class="fa-solid fa-wifi"></i>';
             title.textContent = 'جاري رفع البصمة للسيرفر...'; title.style.color = 'var(--success)';
-            await temporaryNetworkWakeUp();
-            await syncOfflinePunches();
+            await temporaryNetworkWakeUp(); // فتح الواي فاي مؤقتاً
+            await syncOfflinePunches(); // رفع البصمة
             toast('تم تسجيل حضورك بنجاح ورفعه!', 'success');
         } else if(!cd.clockOut) {
             savePunchOffline('out', time);
             btn.style.background = 'var(--primary)'; btn.innerHTML = '<i class="fa-solid fa-wifi"></i>';
             title.textContent = 'جاري رفع الانصراف للسيرفر...'; title.style.color = 'var(--primary)';
-            await temporaryNetworkWakeUp();
-            await syncOfflinePunches();
+            await temporaryNetworkWakeUp(); // فتح الواي فاي مؤقتاً
+            await syncOfflinePunches(); // رفع البصمة
             toast('تم تسجيل انصرافك بنجاح ورفعه!', 'info');
         } else {
             toast('أنت مسجل حضور وانصراف بالفعل اليوم', 'warn');
@@ -809,7 +802,8 @@ function updateAttDateLabel(){const d=new Date(currentAttDate);const label=docum
 function navAttDate(dir){const d=new Date(currentAttDate);d.setDate(d.getDate()+dir);currentAttDate=d.toISOString().split('T')[0];updateAttDateLabel();renderAttTable();}
 function goToday(){currentAttDate=TODAY;updateAttDateLabel();renderAttTable();}
 
-function renderAttTable(){const date=currentAttDate,tb=document.getElementById('attBody');if(!tb)return;tb.innerHTML='';const isAdmin=ME&&ME.role==='admin';Object.keys(allUsers).forEach(u=>{if(ADMINS.includes(u))return;const user=allUsers[u]||{},att=user.attendance&&user.attendance[date]?user.attendance[date]:null;const isOff=att&&att._offline;const srcBadge=isOff?'<span class="badge badge-off" style="font-size:0.65rem;">أوفلاين</span>':'<span class="badge badge-ok" style="font-size:0.65rem;">أونلاين</span>';tb.innerHTML+=`<tr><td>${user.realName||u}</td><td><span class="badge ${att&&att.status==='Present'?'badge-ok':'badge-no'}">${att?att.status:'Absent'}</span></td><td>${att?(att.clockIn||'--'):'--'}</td><td>${att?(att.clockOut||'--'):'--'}</td><td>${att?srcBadge:'--'}</td><td>${isAdmin?`<button class="edit-btn" onclick="openCorr('${u}','${date}')"><i class="fa-solid fa-pen"></i></button>`:'--'}</td></tr>`;});}
+// تعديل الاتفاق: إخفاء كلمة Absent تلقائية، وتحويها لـ "في الانتظار" بلون أصفر
+function renderAttTable(){const date=currentAttDate,tb=document.getElementById('attBody');if(!tb)return;tb.innerHTML='';const isAdmin=ME&&ME.role==='admin';Object.keys(allUsers).forEach(u=>{if(ADMINS.includes(u))return;const user=allUsers[u]||{},att=user.attendance&&user.attendance[date]?user.attendance[date]:null;const isOff=att&&att._offline;const srcBadge=isOff?'<span class="badge badge-off" style="font-size:0.65rem;">أوفلاين</span>':'<span class="badge badge-ok" style="font-size:0.65rem;">أونلاين</span>';let statusBadge = att ? (att.status==='Present' ? '<span class="badge badge-ok">حاضر</span>' : '<span class="badge badge-no">غائب</span>') : '<span class="badge badge-wait">في الانتظار</span>';tb.innerHTML+=`<tr><td>${user.realName||u}</td><td>${statusBadge}</td><td>${att?(att.clockIn||'--'):'--'}</td><td>${att?(att.clockOut||'--'):'--'}</td><td>${att?srcBadge:'--'}</td><td>${isAdmin?`<button class="edit-btn" onclick="openCorr('${u}','${date}')"><i class="fa-solid fa-pen"></i></button>`:'--'}</td></tr>`;});}
 
 function weekKey(dateStr){const d=new Date(dateStr);d.setDate(d.getDate()-((d.getDay()+1)%7));return d.toISOString().split('T')[0];}
 function fillUserSelects(){const s=document.getElementById('shUser');s.innerHTML='';Object.keys(allUsers).forEach(u=>{if(!ADMINS.includes(u))s.innerHTML+=`<option value="${u}">${allUsers[u].realName||u}</option>`;});}
