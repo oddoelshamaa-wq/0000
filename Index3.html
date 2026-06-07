@@ -727,38 +727,115 @@ function stopMainScanner(){
     desc.textContent='اضغط الزر ده وصرّب الكاميرا نحو الـ QR اللي على شاشة المدير عشان تسجل بصمتك';steps.classList.remove('hidden');isScanning=false;
 }
 
+// ===== دالة معالجة الكود بعد المسح =====
 async function processScannedQR(text){
     if(!ME) return toast('سجل دخولك أولاً', 'error');
+    
     if(text.startsWith('SHAMAA_ADMIN|')) {
-        const adminUser = text.split('|')[1]; 
         const now = new Date();
         const time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
         const today = getTodayStr();
+        
         let la = getLocalAttendance(ME.username);
         let cd = la[today] || {};
         const btn = document.getElementById('scanMainBtn');
         const title = document.getElementById('scanTitle');
         
         if(!cd.clockIn) {
+            // 1. حفظ البصمة محلياً أولاً
             savePunchOffline('in', time);
+            
+            // 2. حفظ البصمة في IndexedDB عشان الـ Service Worker يرفعها
+            const punchData = {
+                username: ME.username,
+                date: today,
+                data: {
+                    clockIn: time,
+                    status: 'Present',
+                    deviceId: DEV_ID,
+                    date: today
+                }
+            };
+            await savePunchToIndexedDB(punchData);
+            
+            // 3. طلب فتح الشبكة في الخلفية من الـ App (هنا السحر)
+            requestBackgroundSync();
+            
+            // 4. تغيير شكل الزر
             btn.style.background = 'var(--success)'; btn.innerHTML = '<i class="fa-solid fa-wifi"></i>';
-            title.textContent = 'جاري رفع البصمة للسيرفر...'; title.style.color = 'var(--success)';
-            await temporaryNetworkWakeUp(); // فتح الواي فاي مؤقتاً
-            await syncOfflinePunches(); // رفع البصمة
-            toast('تم تسجيل حضورك بنجاح ورفعه!', 'success');
+            title.textContent = 'جاري رفع البصمة (شغل النت لو مقفول)...'; title.style.color = 'var(--success)';
+            
+            toast('تم تسجيل حضورك! البصمة هتترفع لوحدها', 'success');
+            
         } else if(!cd.clockOut) {
+            // نفس الخطوات للانصراف
             savePunchOffline('out', time);
+            
+            const punchData = {
+                username: ME.username,
+                date: today,
+                data: {
+                    clockOut: time
+                }
+            };
+            await savePunchToIndexedDB(punchData);
+            
+            requestBackgroundSync();
+            
             btn.style.background = 'var(--primary)'; btn.innerHTML = '<i class="fa-solid fa-wifi"></i>';
-            title.textContent = 'جاري رفع الانصراف للسيرفر...'; title.style.color = 'var(--primary)';
-            await temporaryNetworkWakeUp(); // فتح الواي فاي مؤقتاً
-            await syncOfflinePunches(); // رفع البصمة
-            toast('تم تسجيل انصرافك بنجاح ورفعه!', 'info');
+            title.textContent = 'جاري رفع الانصراف (شغل النت لو مقفول)...'; title.style.color = 'var(--primary)';
+            
+            toast('تم تسجيل انصرافك! البصمة هتترفع لوحدها', 'info');
+            
         } else {
             toast('أنت مسجل حضور وانصراف بالفعل اليوم', 'warn');
         }
+        
         setTimeout(() => { stopMainScanner(); renderEmpStatusLocal(); renderWeekCalendar(); }, 1500);
+        
     } else {
         toast('كود غير صحيح أو منتهي الصلاحية', 'error');
+    }
+}
+
+// ===== دالة حفظ البصمة في IndexedDB =====
+function savePunchToIndexedDB(punch) {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('ShamaaPunchDB', 1);
+        request.onupgradeneeded = e => {
+            const db = e.target.result;
+            if (!db.objectStoreNames.contains('punches')) {
+                db.createObjectStore('punches', { keyPath: 'id', autoIncrement: true });
+            }
+        };
+        request.onsuccess = e => {
+            const db = e.target.result;
+            const tx = db.transaction('punches', 'readwrite');
+            const store = tx.objectStore('punches');
+            store.add(punch);
+            tx.oncomplete = () => resolve();
+            tx.onerror = e => reject(e.target.error);
+        };
+        request.onerror = e => reject(e.target.error);
+    });
+}
+
+// ===== دالة طلب فتح النت من الـ App (Background Sync) =====
+async function requestBackgroundSync() {
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+        const registration = await navigator.serviceWorker.ready;
+        try {
+            // ده بيقول للـ App: "افتح النت في الخلفية وشغل دالة syncPunchesInBackground اللي في sw.js"
+            await registration.sync.register('sync-punches');
+            console.log('تم طلب فتح النت في الخلفية للرفع');
+        } catch (err) {
+            console.error('فشل طلب الـ Background Sync:', err);
+            // لو الـ App رفض يفتح النت، نحاول بالطريقة العادية
+            syncOfflinePunches();
+        }
+    } else {
+        // لو الموبايل قديم مش بيدعم الـ Background Sync
+        syncOfflinePunches();
     }
 }
 function getTodayStr(){return new Date().toISOString().split('T')[0];}
