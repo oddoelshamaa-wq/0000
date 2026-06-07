@@ -596,7 +596,7 @@ function closeEmpQrModal(){document.getElementById('empQrModalOverlay').classLis
 
 let staticQrInterval = null;
 function renderStaticBadge(){if(!ME||ME.role==='admin')return;const container=document.getElementById('staticQrContainer');if(!container)return;container.innerHTML='';const qrData=`SHAMAA_ID|${ME.username}|${ME.realName||ME.username}|${Math.floor(Date.now()/1000)}`;try{new QRCode(container,{text:qrData,width:200,height:200,colorDark:"#000000",colorLight:"#ffffff"});}catch(e){}}
-function startStaticQrRefresh(){if(staticQrInterval) clearInterval(staticQrInterval); staticQrInterval = setInterval(renderStaticBadge, 30000);}
+function startStaticQrRefresh(){if(staticQrInterval) clearInterval(staticQrInterval); staticQrInterval = setInterval(renderStaticBadge, 15000);}
 
 function enterDashboard(){showScreen('screenDash');document.getElementById('dashName').textContent=ME.realName||ME.username;const isAdmin=ME.role==='admin';document.getElementById('adminSection').classList.toggle('hidden',!isAdmin);document.getElementById('empView').classList.toggle('hidden',isAdmin);document.getElementById('btnMyQr').classList.toggle('hidden',isAdmin);document.getElementById('empScheduleCard').classList.toggle('hidden',isAdmin);currentAttDate=TODAY;updateAttDateLabel();if(isAdmin){generateQR();fillUserSelects();fillReportEmpFilter();fillManualBindSelect();initReportDates('thisWeek');}renderWeekCalendar();renderEmpSchedule();renderAttTable();renderShiftsTable();updateNetUI();updateSyncBanner();if(!isAdmin){renderStaticBadge();startStaticQrRefresh();if(!ME._offlineMode)listenToMyStatus();else renderEmpStatusLocal();listenToMySchedule();}}
 
@@ -744,15 +744,23 @@ function handleContinuousScan(text){
         lastScannedUser=text;
         lastScanTime=now;
         
-        const punchDate = actualTimestamp ? new Date(actualTimestamp * 1000) : new Date();
-        const today = punchDate.toISOString().split('T')[0];
-        // تعديل هنا: إضافة الثواني لمنع تكرار نفس الدقيقة
-        const punchTime = punchDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        let punchTime = "";
+        let today = TODAY_STR();
+        
+        // نستخدم التوقيت الفعلي المحفوظ في الكود بتاع الموظف، ومش نعتمد على ساعة المدير
+        if (actualTimestamp) {
+            const punchDate = new Date(actualTimestamp * 1000);
+            today = punchDate.toISOString().split('T')[0];
+            punchTime = punchDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        } else {
+            const punchDate = new Date();
+            today = punchDate.toISOString().split('T')[0];
+            punchTime = punchDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
 
         db.ref(`users/${user}/attendance/${today}`).once('value').then(snap=>{
             const data=snap.val();
             
-            // حماية 1: لو مسجل حضور وانصراف خلاص
             if(data && data.clockIn && data.clockOut){
                 toast(`${name} مسجل حضور وانصراف خلاص في ${today}`,"warn");
                 let q=LS.get('sync_queue',[]);
@@ -764,7 +772,6 @@ function handleContinuousScan(text){
                 return; 
             }
 
-            // حماية 2: لو البصمة اترفعت أونلاين بالفعل (نفس الوقت بالثانية)
             if(data && data.clockIn === punchTime){
                 toast(`${name} البصمة دي مرفوعة بالفعل على السيرفر`,"info");
                 let q=LS.get('sync_queue',[]);
@@ -783,7 +790,6 @@ function handleContinuousScan(text){
                 upd.clockIn=punchTime;
                 actionType = "حضور";
             }else if(!data.clockOut){
-                // حماية 3: لو وقت الخروج نفس وقت الدخول
                 if(data.clockIn === punchTime){
                     toast(`خطأ: وقت الخروج نفس وقت الدخول (${punchTime})`,"error");
                     return;
