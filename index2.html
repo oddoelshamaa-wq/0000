@@ -350,12 +350,18 @@ table{min-width:500px}
 
         <!-- واجهة الموظف -->
         <div id="empView">
-<!-- كارت الموظف الثابت (بيفتح أوفلاين) -->
-<div id="offlineBadgeArea" style="text-align: center; background: var(--card); padding: 20px; border-radius: 20px; border: 2px solid var(--primary); margin-bottom: 20px;">
-    <div style="font-weight: 900; margin-bottom: 10px; color: var(--primary);">كارت البصمة الخاص بك</div>
-    <div id="staticQrContainer" style="background: #fff; padding: 15px; border-radius: 15px; display: inline-block;"></div>
-    <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-dim);">وجه هذا الكود لكاميرا المدير لتسجيل الحضور</div>
-</div>
+            <!-- زر فتح الكاميرا الخاص بالموظف (لمسح كود المدير) -->
+            <div class="scan-section" id="scanSection">
+                <button class="scan-main-btn" id="scanMainBtn" onclick="toggleScanner()"><i class="fa-solid fa-camera"></i></button>
+                <div class="scan-title" id="scanTitle">صوّر QR المدير</div>
+                <الوصف class="scan-desc" id="scanDesc">اضغط الزر ده وصرّب الكاميرا نحو الـ QR اللي على شاشة المدير عشان تسجل بصمتك</div>
+                <div class="scan-steps" id="scanSteps">
+                    <div class="scan-step"><span class="scan-step-num">1</span> اضغط الزر</div>
+                    <div class="scan-steps"><span class="scan-step-num">2</ scanning QR المدير</div>
+                    <div class="scan-step"><span class="scan-steps"><span class="scan-step-num">3</span> هيتم تلقائياً</div>
+                </div>
+                <div id="reader" class="hidden"></div>
+            </div>
             <!-- جدول المناوبات (فقط للموظف) -->
             <div class="emp-schedule-card" id="empScheduleCard">
                 <h4><i class="fa-solid fa-calendar-days"></i> جدول مناوباتك لهذا الأسبوع</h4>
@@ -382,18 +388,13 @@ table{min-width:500px}
         </div>
 
         <!-- قسم الادمن -->
-        <div id="adminSection" class="hidden" style="margin-top:10px;">
-            <!-- زر المدير الجديد (يظهر في شاشته) -->
-<div class="admin-fast-scan" style="margin-bottom: 20px;">
-    <button class="btn btn-success btn-full btn-lg" onclick="toggleStationMode()" style="height: 80px; border-radius: 15px;">
-        <i class="fa-solid fa-tower-broadcast" style="margin-left: 10px;"></i> فتح محطة استقبال البصمات
-    </button>
-</div>
-            <div class="admin-qr-box">
-                <div style="font-weight:700;margin-bottom:12px;color:var(--accent);"><i class="fa-solid fa-shield-halved"></i> كود QR للبصمة (يتغير كل 15 ثانية)</div>
-                <div id="qrcode"></div>
-                <div class="qr-countdown" id="qrCountdown">15</div>
-                <div class="qr-timer"><i class="fa-solid fa-rotate"></i> الكود بيتجدد تلقائياً</div>
+               <div id="adminSection" class="hidden" style="margin-top:10px;">
+            <!-- كود المدير الثابت (اللي الموظف هيمسحه) -->
+            <div class="admin-qr-box" style="padding: 40px 20px;">
+                <div style="font-size: 1.5rem; font-weight: 900; margin-bottom: 20px; color: var(--primary);"><i class="fa-solid fa-shield-halved"></i> محطة البصمة</div>
+                <div style="font-size: 1rem; color: var(--accent); margin-bottom: 30px;">وجّه كاميرا موبايلك نحو هذا الكود لتسجيل الحضور</div>
+                <div id="qrcode" style="background:#fff;padding:20px;border-radius:18px;display:inline-block;box-shadow:0 8px 30px rgba(0,0,0,0.5);"></div>
+                <div style="margin-top: 20px; font-size: 0.9rem; color: var(--text-dim);">الكود ثابت ونشط دائماً - لا حاجة لتحديث الصفحة</div>
             </div>
 
             <div class="tabs-nav">
@@ -402,7 +403,7 @@ table{min-width:500px}
                 <button class="tab-btn" data-tab="tabDevices" onclick="switchTab(this)"><i class="fa-solid fa-mobile-screen"></i> الأجهزة</button>
                 <button class="tab-btn" data-tab="tabReports" onclick="switchTab(this)"><i class="fa-solid fa-file-excel"></i> التقارير</button>
             </div>
-
+            <!-- باقي التبويبات زي ما هي -->
             <div id="tabAtt" class="tab-panel active">
                 <div class="date-nav">
                     <button class="date-nav-btn" onclick="navAttDate(-1)"><i class="fa-solid fa-chevron-right"></i></button>
@@ -417,6 +418,105 @@ table{min-width:500px}
                     </table>
                 </div>
             </div>
+
+            <div id="tabShifts" class="tab-panel">
+                <div class="shift-form">
+                    <h4><i class="fa-solid fa-pen-to-square"></i> تعديل جدول المناوبات</h4>
+                    <div class="shift-grid">
+                        <div class="form-group" style="margin:0;"><label>الموظف</label><select id="shUser" class="form-input"></select></div>
+                        <div class="form-group" style="margin:0;">
+                            <label>اليوم</label>
+                            <select id="shDay" class="form-input">
+                                <option value="0">السبت</option><option value="1">الأحد</option><option value="2">الاثنين</option>
+                                <option value="3">الثلاثاء</option><option value="4">الأربعاء</option><option value="5">الخميس</option><option value="6">الجمعة</option>
+                            </select>
+                        </div>
+                        <div class="form-container" style="margin:0;">
+                            <label>الحالة</label>
+                            <select id="shStatus" class="form-input" onchange="toggleShiftTimes()">
+                                <option value="work">دوام</option><option value="Off">إجازة</option>
+                                <option value="Annual Leave">سنوية</option><option value="Sick Leave">مرضية</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="shift-times" id="shiftTimesRow">
+                        <div class="form-group" style="margin:0;"><label>وقت الدخول</label><input type="time" id="shIn" class="form-input" value="07:00"></div>
+                        <div class="form-group" style="margin:0;"><label>وقت الخروج</label><input type="time" id="shOut" class="form-input" value="15:00"></div>
+                    </div>
+                    <button class="btn btn-success" style="margin-top:14px;" onclick="saveShift()"><i class="fa-solid fa-floppy-disk"></i> حفظ</button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>الموظف</th><th>سبت</th><th>أحد</th><th>اثنين</th><th>ثلاثاء</th><th>أربعاء</th><th>خميس</th><th>جمعة</th></tr></thead>
+                        <tbody id="shiftsBody"></tbody>
+                    </table>
+    </div>
+            </div>
+
+            <div id="tabDevices" class="tab-panel">
+                <div class="admin-scan-emp-box">
+                    <h4><i class="fa-solid fa-camera"></i> مسح QR الموظف للربط</h4>
+                    <p>وجّه الكاميرا نحو QR اللي على موبايل الموظف</p>
+                    <button class="scan-emp-btn-icon" onclick="startEmpScan()" aria-label="مسح QR موظف"><i class="fa-solid fa-qrcode"></i></button>
+                    <div id="empReader" class="hidden"></div>
+                    <div id="scanEmpResult"></div>
+                </div>
+                <div class="manual-bind-box">
+                    <h4><i class="fa-solid fa-wand-magic-sparkles"></i> ربط جهاز يدوياً</h4>
+                    <div class="manual-bind-form">
+                        <div class="form-group"><label>اختار الموظف</label><select id="manualBindUser" class="form-image"/></div>
+                        <div class="form-group" style="flex:1.5;"><label>معرّف الجهاز</label><input type="text" id="manualBindDevId" class="form-input" placeholder="D-XXXXXXXX" style="font-family:'Courier New',monospace;"></div>
+                        <button class="btn btn-success btn-sm" onclick="manualBindDevice()" style="height:50px;white-space:nowrap;"><i class="fa-solid fa-link"></i> ربط</button>
+                    </div>
+                </div>
+                <div style="font-weight:700;margin-bottom:10px;color:var(--text-dim);font-size:0.9rem;"><i class="fa-solid fa-list"></i> حالة الأجهزة</div>
+                <div class="table-wrap">
+                    <div class="table-wrap">
+                    <table>
+                        <thead><tr><th>الموظف</th><th>الجهاز المعتمد</th><th>طلب معلّق</th><th>الحاقة</th><th>الإجراء</th></tr></thead>
+                        <tbody id="devBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="tabReports" class="tab-panel">
+                <div style="padding:18px;background:rgba(14,165,233,0.05);border:1px solid rgba(14,165,233,0.2);border-radius:16px;margin-bottom:20px;">
+                    <h4 style="color:var(--primary);margin-bottom:14px;font-size:1.05rem;"><i class="cla-solid fa-clipboard-check"></i> تقرير التزام بالشيفتات</h4>
+                    <div class="quick-btns">
+                        <button class="quick-btn active" onclick="setReportQuick('thisWeek',this)">هذا الأسبوع</button>
+                        <button class="quick-btn" onclick="setReportQuick('lastWeek',this)">الأسبوع اللي فات</button>
+                        <button class="quick-btn" onclick="setReportQuick('thisMonth',this)">هذا الشهر</button>
+                        <button class="quick-cli" onclick="setReportQuick('lastMonth',this)">الشهر اللي فات</button>
+                    </div>
+                    <div class="report-period">
+                        <div class="form-group"><label>من</label><input type="date" id="repFrom" class="form-input"></div>
+                        <div class="form-group"><label>إلى</label><input type="date" id="repTo" class="form-input"></div>
+                        <button class="btn btn-primary btn-sm" onclick="runShiftReport()" style="height:50px;"><i class="fa-solid fa-magnifying-glass"></i> عرض</button>
+                    </div>
+                    <div class="emp-filter-row">
+                        <div class structure="margin:0;flex:1;"><label>فلتر موظف</label><select id="repEmpFilter" class="form-input"><option value="all">كل الموظفين</option></select></div>
+                        <button class="btn btn-accent btn-sm" onclick="xlShiftReport()" style="height:50px;"><i class="fa-solid fa-file-excel"></i> Excel</button>
+                    </div>
+                    <div class="report-summary hidden" id="shiftSummary">
+                        <div class="report-summary-card rs-red"><div class="rs-label"><i class="fa-solid fa-circle-xmark"></i> غياب في وردية</div><div class="rs-value" id="sumAbsent">0</div></div>
+                        <a class="report-summary-card rs-amber"><div class="rs-label"><i class="fa-summary-card rs-amber"><div class="rs-label"><i class="fa-solid fa-calendar-xmark"></i> نزل في إجازة</div><div class="rs-value" id="sumOffDay">0</div></div>
+                        <div class="report-summary-card rs-blue"><div class="rs-label"><i class="fa-solid fa-clock-rotate-left"></i> تأخير</div><div class="rs-value" id="sumShiftChange">0</div></div>
+                    </div>
+                    <div class="table-wrap hidden" id="shiftReportTable" style="margin-top:14px;">
+                        <table>
+                            <head><tr><th>الموظف</th><th>غياب في وردية</th><th>نزل في إجازة</th><th>EHغير شيفت</th><th>إجمالي</th><th>تفاصيل</th></tr></thead>
+                            <tbody id="shiftReportBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <button class="btn btn-success" onclick="xlAnalytics()"><i class="ii fa-chart-pie"></i> تحليل أداء</button>
+                    <button class="btn btn-primary" onclick="xlDetailed()"><i class="fa-solid fa-list-check"></i> سجل تفصيلي</button>
+                    <button class="btn btn-danger" onclick="xlAbsences()"><i class="a-solid fa-circle-xmark"></i> tật report غياب</button>
+                    <button class="btn btn-accent" onclick="xlArchive()"><i class="fa-solid fa-box-archive"></i> أرشفة</button>
+                </div>
+            </div>
+        </div>
 
             <div id="tabShifts" class="tab-panel">
                 <div class="shift-form">
@@ -742,17 +842,22 @@ function generateEmpQR(containerId,username,realName){
     try{new QRCode(c,{text:data,width:180,height:180,colorDark:"#0f172a",colorLight:"#ffffff"});}catch(e){}
 }
 
+// دالة توليد كود المدير الثابت اللي الموظف هيمسحه
 function generateQR(){
-    const container=document.getElementById('qrcode');if(!container)return;
-    const update=()=>{
-        const now=new Date();
-        const datePart=String(now.getDate()).padStart(2,'0')+String(now.getMonth()+1).padStart(2,'0')+String(now.getFullYear()).slice(-2);
-        const timeSeq=Math.floor(Date.now()/15000);
-        const dynamicCode=`SHAMAA*${datePart}*${timeSeq}`;
-        container.innerHTML='';
-        new QRCode(container,{text:dynamicCode,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
-        qrSecondsLeft=15;
-    };
+    const container = document.getElementById('qrcode');
+    if(!container) return;
+    
+    // بنولد كود ثابت عبارة عن: SHAMAA_ADMIN|username
+    const staticAdminCode = `SHAMAA_ADMIN|${ME.username}`;
+    
+    container.innerHTML = '';
+    new QRCode(container, {
+        text: staticAdminCode,
+        width: 280, // حجم كبير عشان الموظف يقدر يمسحه بسهولة
+        height: 280,
+        correctLevel: QRCode.CorrectLevel.H
+    });
+
     update();
     if(qrInterval)clearInterval(qrInterval);
     if(qrCountdownInterval)clearInterval(qrCountdownInterval);
@@ -917,21 +1022,36 @@ function stopMainScanner(){
     title.textContent='صوّب QR المدير';title.style.color='var(--text)';
     desc.textContent='اضغط الزر ده وصرّب الكاميرا نحو الـ QR اللي على شاشة المدير عشان تسجل بصمتك';steps.classList.remove('hidden');isScanning=false;
 }
+// دالة معالجة الكود اللي الموظف مسحه من شاشة المدير
 function processScannedQR(text){
-    if(!ME)return toast('سجل دخولك أولاً','error');
-    const now=new Date();
-    const datePart=String(now.getDate()).padStart(2,'0')+String(now.getMonth()+1).padStart(2,'0')+String(now.getFullYear()).slice(-2);
-    const ct=Math.floor(Date.now()/15000),pt=ct-1;
-    const v1=`SHAMAA*${datePart}*${ct}`,v2=`SHAMAA*${datePart}*${pt}`;
-    if(text===v1||text===v2){
-        const time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-        const today=getTodayStr();
-        let la=getLocalAttendance(ME.username);let cd=la[today]||{};
-        if(!cd.clockIn){savePunchOffline('in',time);}
-        else if(!cd.clockOut){savePunchOffline('out',time);}
-        else{toast('أنت مسجل حضور وانصراف بالفعل اليوم','warn');if(navigator.vibrate)navigator.vibrate(200);}
-        stopMainScanner();
-    }else{toast('كود منتهي الصلاحية أو غير صحيح','error');if(navigator.vibrate)navigator.vibrate(200);}
+    if(!ME) return toast('سجل دخولك أولاً', 'error');
+    
+    // لو الكود اللي المدير بيولده
+    if(text.startsWith('SHAMAA_ADMIN|')) {
+        const adminUser = text.split('|')[1]; // استخراج يوزرنيم المدير من الكود
+        
+        const now = new Date();
+        const time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+        const today = getTodayStr();
+        
+        // 1. سجّل البصمة محلياً على جهاز الموظف أولاً (عشان لو النت قطع يتبعت بعدين)
+        let la = getLocalAttendance(ME.username);
+        let cd = la[today] || {};
+        
+        if(!cd.clockIn) {
+            savePunchOffline('in', time);
+            toast('تم تسجيل حضورك بنجاح!', 'success');
+        } else if(!cd.clockOut) {
+            savePunchOffline('out', time);
+            toast('تم تسجيل انصرافك بنجاح!', 'info');
+        } else {
+            toast('أنت مسجل حضور وانصراف بالفعل اليوم', 'warn');
+        }
+        
+        stopMainScanner(); // نقفل الكاميرا بعد ما سجلنا
+    } else {
+        toast('كود غير صحيح أو منتهي الصلاحية', 'error');
+    }
 }
 function getTodayStr(){return new Date().toISOString().split('T')[0];}
 
@@ -958,20 +1078,50 @@ function closePunchConfirm(e){if(e&&e.target!==e.currentTarget&&!e.target.closes
 
 // ===== مزامنة الأوفلاين =====
 async function syncOfflinePunches(){
-    if(!navigator.onLine||!firebaseReady)return;
-    let q=LS.get('sync_queue',[]);if(q.length===0)return;
-    const db2=document.getElementById('dashNetBar');
-    if(db2)db2.innerHTML=`<div class="net-bar syncing"><span class="bind-spinner"></span> جاري رفع (${q.length}) بصمة...</div>`;
-    for(let i=0;i<q.length;i++){
-        const p=q[i];
-        try{
-            const ref=db.ref(`users/${p.username}/attendance/${p.date}`);
-            let upd={};if(p.type==='in'){upd={clockIn:p.time,status:'Present',deviceId:p.deviceId,date:p.date};}else{upd={clockOut:p.time};}
-            await ref.update(upd);q=q.filter(x=>x.timestamp!==p.timestamp);LS.set('sync_queue',q);
-            let la=getLocalAttendance(p.username);if(la[p.date])delete la[p.date]._offline;LS.set('att_'+p.username,la);
-        }catch(e){console.error("فشلت مزامنة بصمة");}
+    if(!navigator.onLine || !firebaseReady) return;
+    let q = LS.get('sync_queue', []);
+    if(q.length === 0) return;
+    
+    const db2 = document.getElementById('dashNetBar');
+    if(db2) db2.innerHTML = `<div class="net-bar syncing"><span class="bind-spinner"></span> جاري رفع (${q.length}) بصمة...</div>`;
+    
+    for(let i = 0; i < q.length; i++){
+        const p = q[i];
+        try {
+            const ref = db.ref(`users/${p.username}/attendance/${p.date}`);
+            // نقرأ البيانات الموجودة الأول عشان نمسحها أو نعدلها
+            const snap = await ref.once('value');
+            const existing = snap.val() || {};
+            
+            let upd = { date: p.date };
+            if(p.type === 'in') {
+                upd.clockIn = p.time;
+                upd.status = 'Present';
+                upd.deviceId = p.deviceId;
+            } else {
+                upd.clockOut = p.time;
+            }
+            
+            // دمج البيانات الجديدة مع القديمة
+            const finalData = { ...existing, ...upd };
+            
+            await ref.update(finalData);
+            
+            // حذف البصمة من الطابور بعد نجاح الرفع
+            q = q.filter(x => x.timestamp !== p.timestamp);
+            LS.set('sync_queue', q);
+            
+            let la = getLocalAttendance(p.username);
+            if(la[p.date]) delete la[p.date]._offline;
+            LS.set('att_'+p.username, la);
+            
+        } catch(e) {
+            console.error("فشلت مزامنة بصمة", e);
+        }
     }
-    updateNetUI();updateSyncBanner();renderWeekCalendar();
+    updateNetUI();
+    updateSyncBanner();
+    renderWeekCalendar();
 }
 function syncLocalAttToFirebase(u){setTimeout(syncOfflinePunches,2000);}
 
@@ -1273,8 +1423,6 @@ enterDashboard = function() {
 };
 
 // 2. وظيفة المدير: المسح المستمر والسريع جداً
-// --- كود محطة الاستقبال الذكية (بدون تدخل بشرى) ---
-
 let stationScanner = null;
 let lastScannedUser = "";
 let lastScanTime = 0;
@@ -1284,45 +1432,35 @@ function toggleStationMode() {
     const scanSection = document.getElementById('scanSection');
     
     if (!stationScanner) {
-        // إظهار منطقة الكاميرا
         scanSection.classList.remove('hidden');
         reader.classList.remove('hidden');
-        
         stationScanner = new Html5Qrcode("reader");
         
-        // إعدادات الكاميرا للمسح السريع جداً
-        const config = { 
-            fps: 30, // سرعة مسح عالية جداً
-            qrbox: { width: 300, height: 300 },
-            aspectRatio: 1.0
-        };
-
         stationScanner.start(
-            { facingMode: "user" }, // استخدام الكاميرا الأمامية لتسهيل الرؤية للموظف
-            config,
+            { facingMode: "user" }, 
+            { fps: 25, qrbox: 300 }, // سرعة عالية جداً
             (text) => {
-                handleSmartAutoScan(text);
+                handleContinuousScan(text);
             }
         );
-        toast("محطة الاستقبال نشطة.. وجه كود الموظف للكاميرا", "success");
+        toast("محطة الاستقبال جاهزة.. المسح مستمر", "success");
     } else {
         stationScanner.stop().then(() => {
             stationScanner = null;
             reader.classList.add('hidden');
-            toast("تم إيقاف محطة الاستقبال", "info");
         });
     }
 }
 
-function handleSmartAutoScan(text) {
+function handleContinuousScan(text) {
     const now = Date.now();
-    // منع التكرار: إذا تم مسح نفس الكود في أقل من 15 ثانية، تجاهله (لمنع تسجيل دخول/خروج متتالي بالخطأ)
-    if (text === lastScannedUser && now - lastScanTime < 15000) return;
+    // منع تكرار مسح نفس الموظف في أقل من 10 ثواني (عشان ميسجلش دخول وخروج في لحظة)
+    if (text === lastScannedUser && now - lastScanTime < 10000) return;
 
     const p = text.split('|');
-    if (p[0] === "SHAMAA_ID" || p[0] === "SHAMAA_EMP") {
+    if (p[0] === "SHAMAA_ID") {
         const user = p[1];
-        const name = p[3] || p[1];
+        const name = p[2];
         
         lastScannedUser = text;
         lastScanTime = now;
@@ -1330,50 +1468,28 @@ function handleSmartAutoScan(text) {
         const today = TODAY_STR();
         const punchTime = new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
 
-        // التسجيل الفوري
+        // التسجيل الفوري في قاعدة البيانات
         db.ref(`users/${user}/attendance/${today}`).once('value').then(snap => {
             const data = snap.val();
             let upd = { date: today, status: 'Present' };
-            let actionType = "";
-
+            
             if (!data || !data.clockIn) {
                 upd.clockIn = punchTime;
-                actionType = "دخول";
+                toast(`مرحباً ${name}: تسجيل دخول`, "success");
             } else if (!data.clockOut) {
                 upd.clockOut = punchTime;
-                actionType = "خروج";
+                toast(`وداعاً ${name}: تسجيل خروج`, "info");
             } else {
-                toast(`الموظف ${name} سجل حضور وانصراف بالفعل اليوم`, "warn");
-                return;
+                return; // مسجل حضور وانصراف خلاص
             }
 
             db.ref(`users/${user}/attendance/${today}`).update(upd).then(() => {
-                // إصدار صوت تنبيه للموظف
-                playSuccessSound();
-                toast(`تم تسجيل ${actionType} لـ ${name} الساعة ${punchTime}`, "success");
-                
-                // اهتزاز الموبايل للتأكيد
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+                // صوت "تيت" قوي
+                new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3').play();
+                if (navigator.vibrate) navigator.vibrate(200);
             });
         });
     }
-}
-
-function playSuccessSound() {
-    // صوت "تيت" احترافي
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // نغمة حادة
-    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.1);
 }
 </script>
 </body>
