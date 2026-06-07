@@ -400,6 +400,20 @@ table{min-width:500px}
 
         <!-- قسم الادمن -->
         <div id="adminSection" class="hidden" style="margin-top:10px;">
+            <!-- خانة المدير لتأكيد الأكواد المستلمة من الموظفين -->
+<div class="admin-qr-box" style="border-color: var(--success); background: rgba(16,185,129,0.05);">
+    <div style="font-weight:700; margin-bottom:12px; color:var(--success);">
+        <i class="fa-solid fa-user-check"></i> تأكيد حضور موظف (أوفلاين)
+    </div>
+    <div style="display: flex; gap: 10px;">
+        <input type="number" id="offlineConfirmInput" class="form-input" placeholder="اكتب الكود اللي الموظف قاله" 
+               style="text-align: center; font-size: 1.5rem; letter-spacing: 5px;">
+        <button class="btn btn-success" onclick="verifyEmployeeOfflineCode()">تأكيد</button>
+    </div>
+    <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 8px;">
+        اكتب الـ 6 أرقام اللي هتظهر على موبايل الموظف هنا.
+    </p>
+</div>
             <div id="managerStation" style="text-align: center;">
     <button id="startStationBtn" class="btn btn-success btn-lg btn-full" onclick="toggleManagerStation()" style="height: 80px; font-size: 1.3rem;">
         <i class="fa-solid fa-headset"></i> فتح محطة استقبال المكالمات
@@ -1344,46 +1358,28 @@ function initEmpDialer() {
 }
 
 // 2. الموظف "يتصل" (يولد QR)
+// دالة الموظف لتحويل كود المدير إلى "كود تأكيد" فريد
 function makeEmployeeCall() {
     if (empInputCode.length < 6) {
         toast("أدخل الكود المكون من 6 أرقام الموضح عند المدير", "warn");
         return;
     }
 
-    // توليد الأكواد الصحيحة في اللحظة الحالية على جهاز الموظف
-    const correctCodeNow = getSyncCode(0);
-    const correctCodeBefore = getSyncCode(-1); // سماح بـ 15 ثانية تأخير
+    // معادلة حسابية تعتمد على كود المدير + اسم الموظف + تاريخ اليوم
+    // هذه المعادلة تضمن أن الكود الناتج لا يعمل إلا لهذا الموظف فقط وفي هذه اللحظة فقط
+    const userSeed = ME.username.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const dateSeed = new Date().getDate();
+    
+    // حساب كود التأكيد
+    let confirmationCode = (parseInt(empInputCode) + userSeed + dateSeed) * 7;
+    let finalCode = (confirmationCode % 1000000).toString().padStart(6, '0');
 
-    // مقارنة الكود اللي الموظف كتبه بالأكواد المتوقعة
-    if (empInputCode === correctCodeNow || empInputCode === correctCodeBefore) {
-        const now = new Date();
-        const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-        const today = TODAY_STR();
+    // إظهار الكود الناتج للموظف بلون مختلف
+    const display = document.getElementById('empDialDisplay');
+    display.style.color = "#f59e0b"; // لون برتقالي للكود الناتج
+    display.textContent = finalCode;
 
-        // معرفة هل هي بصمة دخول أم خروج بناءً على البيانات المحلية
-        let la = getLocalAttendance(ME.username);
-        let cd = la[today] || {};
-
-        if (!cd.clockIn) {
-            // تسجيل حضور أوفلاين
-            savePunchOffline('in', time);
-            if(navigator.vibrate) navigator.vibrate(100);
-        } else if (!cd.clockOut) {
-            // تسجيل انصراف أوفلاين
-            savePunchOffline('out', time);
-            if(navigator.vibrate) navigator.vibrate(100);
-        } else {
-            toast("أنت مسجل حضور وانصراف بالفعل اليوم", "warn");
-        }
-
-        // تصفير الشاشة بعد النجاح
-        empInputCode = "";
-        document.getElementById('empDialDisplay').textContent = "---";
-        
-    } else {
-        toast("الكود غير صحيح! تأكد من الرقم عند المدير", "error");
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-    }
+    toast("أملِ الكود الظاهر باللون البرتقالي للمدير الآن", "success");
 }
 
 // دالة تنفيذ البصمة بعد نجاح الكود
@@ -1450,6 +1446,61 @@ enterDashboard = function() {
     originalDash();
     initEmpDialer();
 };
+function verifyEmployeeOfflineCode() {
+    const typedCode = document.getElementById('offlineConfirmInput').value;
+    if (typedCode.length !== 6) {
+        toast("الكود لازم يكون 6 أرقام", "warn");
+        return;
+    }
+
+    const currentAdminCode = getSyncCode(0);
+    const prevAdminCode = getSyncCode(-1); // للسماح بفرق وقت بسيط
+    const dateSeed = new Date().getDate();
+    let foundUser = null;
+
+    // البحث في جميع الموظفين المسجلين
+    Object.keys(allUsers).forEach(u => {
+        if (ADMINS.includes(u)) return;
+
+        const userSeed = u.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        
+        // حساب الكود المتوقع لهذا الموظف
+        const checkCode = (code) => ((parseInt(code) + userSeed + dateSeed) * 7) % 1000000;
+
+        if (typedCode == checkCode(currentAdminCode).toString().padStart(6, '0') || 
+            typedCode == checkCode(prevAdminCode).toString().padStart(6, '0')) {
+            foundUser = u;
+        }
+    });
+
+    if (foundUser) {
+        const now = new Date();
+        const punchTime = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        const today = TODAY_STR();
+        
+        // التحقق هل هو دخول أم خروج
+        const att = (allUsers[foundUser].attendance && allUsers[foundUser].attendance[today]) || {};
+        let updateData = {};
+        
+        if (!att.clockIn) {
+            updateData = { clockIn: punchTime, status: 'Present', date: today, via: 'Offline_Voice_Auth' };
+            toast(`تم تسجيل دخول: ${allUsers[foundUser].realName}`, "success");
+        } else if (!att.clockOut) {
+            updateData = { clockOut: punchTime };
+            toast(`تم تسجيل انصراف: ${allUsers[foundUser].realName}`, "success");
+        } else {
+            toast("الموظف مسجل بالفعل اليوم", "warn");
+            return;
+        }
+
+        // رفع البيانات للسيرفر فوراً من موبايل المدير
+        db.ref(`users/${foundUser}/attendance/${today}`).update(updateData);
+        document.getElementById('offlineConfirmInput').value = ''; // تصفير الخانة
+        new Audio('https://assets.mixkit.co/active_storage/sfx/1350/1350-preview.mp3').play();
+    } else {
+        toast("كود غير صحيح أو انتهت صلاحيته", "error");
+    }
+}
 </script>
 </body>
 </html>
