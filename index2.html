@@ -614,7 +614,6 @@ function renderWeekCalendar(){
             let att=null;
             if(allUsers[ME.username]&&allUsers[ME.username].attendance&&allUsers[ME.username].attendance[d.str]){att=allUsers[ME.username].attendance[d.str];}else{const la=getLocalAttendance(ME.username);att=la[d.str]||null;}
             if(att){if(att.status==='Present'){st=att._offline?`<div class="w-day-status offline"><i class="fa-solid fa-wifi-slash"></i></div>`:`<div class="w-day-status present"><i class="fa-solid fa-check"></i></div>`;}else{st=`<div class="w-day-status absent"><i class="fa-solid fa-xmark"></i></div>`;}}
-            // تعديل الاتفاق: لا نعرض Absent تلقائياً للموظف، بل "في الانتظار"
             else if(isPast){st=`<div class="w-day-status pending">--</div>`;}else{st=`<div class="w-day-status pending">--</div>`;}
         }
         daysHTML+=`<div class="w-day ${d.isToday?'is-today':''} ${isPast?'is-past':''}"><div class="w-day-name">${d.name}</div><div class="w-day-num" style="font-size:0.9rem;margin-top:5px;">${fullDateStr}</div>${st}</div>`;
@@ -693,19 +692,6 @@ function renderEmpStatusBar(d){
     }else{bar.innerHTML=`<div class="status-chip" style="flex:1;"><div class="chip-label">حالة اليوم</div><div class="chip-value not-yet">لم يتم البصمة بعد</div></div>`;}
 }
 
-// ===== ميزة فتح الشبكة مؤقتاً لرفع البصمة (الاتفاق) =====
-async function temporaryNetworkWakeUp() {
-    if ('wakeLock' in navigator) {
-        try {
-            const lock = await navigator.wakeLock.request('screen');
-            setTimeout(() => lock.release(), 5000);
-        } catch (e) { console.log('WakeLock not supported'); }
-    }
-    if (navigator.onLine) {
-        fetch('https://brak-nagaf-default-rtdb.firebaseio.com/.json?ping=1', { mode: 'no-cors' });
-    }
-}
-
 // ===== الماسح الضوئي =====
 function toggleScanner(){if(isScanning){stopMainScanner();}else{startScan();}}
 function startScan(){
@@ -727,31 +713,25 @@ function stopMainScanner(){
     desc.textContent='اضغط الزر ده وصرّب الكاميرا نحو الـ QR اللي على شاشة المدير عشان تسجل بصمتك';steps.classList.remove('hidden');isScanning=false;
 }
 
-// ===== دالة معالجة الكود بعد المسح =====
+// ===== دالة معالجة الكود المعدلة لمنع خطأ "الكود غلط" =====
 async function processScannedQR(text){
     if(!ME) return toast('سجل دخولك أولاً', 'error');
     
-    // تعديل هنا: البحث عن الكود الصحيح حتى لو الكاميرا قرأت نصوص إضافية
+    // تنظيف الكود من أي نصوص زيادة ممكن الكاميرا تقرأها
     const adminCodePrefix = 'SHAMAA_ADMIN|';
     const startIndex = text.indexOf(adminCodePrefix);
     
-    // لو الكود مش موجود أصلاً
     if (startIndex === -1) {
-        toast('كود غير صحيح أو منتهي الصلاحية', 'error');
+        toast('كود غير صحيح، امسح كود المدير فقط', 'error');
         return;
     }
     
-    // استخراج الكود الصحيح فقط
     const cleanText = text.substring(startIndex);
-    
-    // تقسيم الكود للحصول على اسم المدير
     const p = cleanText.split('|');
     if(p.length < 2) {
-        toast('الكود ناقص أو تالف، حاول مرة أخرى', 'error');
+        toast('الكود ناقص، حاول تقريب الكاميرا أكثر', 'error');
         return;
     }
-    
-    const adminUser = p[1]; 
     
     const now = new Date();
     const time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
@@ -764,31 +744,23 @@ async function processScannedQR(text){
     
     if(!cd.clockIn) {
         savePunchOffline('in', time);
-        const punchData = {
-            username: ME.username,
-            date: today,
-            data: { clockIn: time, status: 'Present', deviceId: DEV_ID, date: today }
-        };
+        const punchData = { username: ME.username, date: today, data: { clockIn: time, status: 'Present', deviceId: DEV_ID, date: today } };
         await savePunchToIndexedDB(punchData);
         requestBackgroundSync();
         
         btn.style.background = 'var(--success)'; btn.innerHTML = '<i class="fa-solid fa-wifi"></i>';
         title.textContent = 'جاري رفع البصمة...'; title.style.color = 'var(--success)';
-        toast('تم تسجيل حضورك بنجاح! البصمة هتترفع لوحدها', 'success');
+        toast('تم تسجيل حضورك بنجاح!', 'success');
         
     } else if(!cd.clockOut) {
         savePunchOffline('out', time);
-        const punchData = {
-            username: ME.username,
-            date: today,
-            data: { clockOut: time }
-        };
+        const punchData = { username: ME.username, date: today, data: { clockOut: time } };
         await savePunchToIndexedDB(punchData);
         requestBackgroundSync();
         
-        btn.style.background = 'var(--primary)'; btn.innerHTML = '<i class="fa-solid fa-wiki"></i>';
+        btn.style.background = 'var(--primary)'; btn.innerHTML = '<i class="fa-solid fa-wifi"></i>';
         title.textContent = 'جاري رفع الانصراف...'; title.style.color = 'var(--primary)';
-        toast('تم تسجيل انصرافك بنجاح! البصمة هتترفع لوحدها', 'info');
+        toast('تم تسجيل انصرافك بنجاح!', 'info');
         
     } else {
         toast('أنت مسجل حضور وانصراف بالفعل اليوم', 'warn');
@@ -797,7 +769,8 @@ async function processScannedQR(text){
     setTimeout(() => { stopMainScanner(); renderEmpStatusLocal(); renderWeekCalendar(); }, 1500);
 }
 
-// ===== دالة حفظ البصمة في IndexedDB =====
+function getTodayStr(){return new Date().toISOString().split('T')[0];}
+
 function savePunchToIndexedDB(punch) {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('ShamaaPunchDB', 1);
@@ -819,25 +792,18 @@ function savePunchToIndexedDB(punch) {
     });
 }
 
-// ===== دالة طلب فتح النت من الـ App (Background Sync) =====
 async function requestBackgroundSync() {
     if ('serviceWorker' in navigator && 'SyncManager' in window) {
         const registration = await navigator.serviceWorker.ready;
         try {
-            // ده بيقول للـ App: "افتح النت في الخلفية وشغل دالة syncPunchesInBackground اللي في sw.js"
             await registration.sync.register('sync-punches');
-            console.log('تم طلب فتح النت في الخلفية للرفع');
         } catch (err) {
-            console.error('فشل طلب الـ Background Sync:', err);
-            // لو الـ App رفض يفتح النت، نحاول بالطريقة العادية
             syncOfflinePunches();
         }
     } else {
-        // لو الموبايل قديم مش بيدعم الـ Background Sync
         syncOfflinePunches();
     }
 }
-function getTodayStr(){return new Date().toISOString().split('T')[0];}
 
 function savePunchOffline(type,time){
     const today=getTodayStr();let la=getLocalAttendance(ME.username);if(!la[today])la[today]={status:'Present',date:today};
@@ -878,7 +844,6 @@ function updateAttDateLabel(){const d=new Date(currentAttDate);const label=docum
 function navAttDate(dir){const d=new Date(currentAttDate);d.setDate(d.getDate()+dir);currentAttDate=d.toISOString().split('T')[0];updateAttDateLabel();renderAttTable();}
 function goToday(){currentAttDate=TODAY;updateAttDateLabel();renderAttTable();}
 
-// تعديل الاتفاق: إخفاء كلمة Absent تلقائية، وتحويها لـ "في الانتظار" بلون أصفر
 function renderAttTable(){const date=currentAttDate,tb=document.getElementById('attBody');if(!tb)return;tb.innerHTML='';const isAdmin=ME&&ME.role==='admin';Object.keys(allUsers).forEach(u=>{if(ADMINS.includes(u))return;const user=allUsers[u]||{},att=user.attendance&&user.attendance[date]?user.attendance[date]:null;const isOff=att&&att._offline;const srcBadge=isOff?'<span class="badge badge-off" style="font-size:0.65rem;">أوفلاين</span>':'<span class="badge badge-ok" style="font-size:0.65rem;">أونلاين</span>';let statusBadge = att ? (att.status==='Present' ? '<span class="badge badge-ok">حاضر</span>' : '<span class="badge badge-no">غائب</span>') : '<span class="badge badge-wait">في الانتظار</span>';tb.innerHTML+=`<tr><td>${user.realName||u}</td><td>${statusBadge}</td><td>${att?(att.clockIn||'--'):'--'}</td><td>${att?(att.clockOut||'--'):'--'}</td><td>${att?srcBadge:'--'}</td><td>${isAdmin?`<button class="edit-btn" onclick="openCorr('${u}','${date}')"><i class="fa-solid fa-pen"></i></button>`:'--'}</td></tr>`;});}
 
 function weekKey(dateStr){const d=new Date(dateStr);d.setDate(d.getDate()-((d.getDay()+1)%7));return d.toISOString().split('T')[0];}
