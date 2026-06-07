@@ -270,7 +270,6 @@ table{min-width:500px}
 </div>
 
 <div class="container">
-    <!-- تسجيل الدخول -->
     <div id="screenLogin" class="screen">
         <div class="glass" style="max-width:420px;margin:60px auto;">
             <div style="text-align:center;margin-bottom:30px;">
@@ -294,7 +293,6 @@ table{min-width:500px}
         </div>
     </div>
 
-    <!-- شاشة ربط الجهاز -->
     <div id="screenBind" class="screen hidden">
         <div class="glass" style="max-width:500px;margin:40px auto;">
             <div class="bind-icon"><i class="fa-solid fa-mobile-screen-button"></i></div>
@@ -313,7 +311,6 @@ table{min-width:500px}
         </div>
     </div>
 
-    <!-- جهاز مرفوض -->
     <div id="screenRejected" class="screen hidden">
         <div class="glass" style="max-width:460px;margin:60px auto;text-align:center;">
             <div style="width:80px;height:80px;border-radius:50%;background:rgba(244,63,94,0.1);border:2px solid var(--danger);display:inline-flex;align-items:center;justify-content:center;font-size:2rem;color:var(--danger);margin-bottom:20px;"><i class="fa-solid fa-ban"></i></div>
@@ -325,7 +322,6 @@ table{min-width:500px}
         </div>
     </div>
 
-    <!-- لوحة التحكم -->
     <div id="screenDash" class="screen hidden">
         <div class="dash-header">
             <div class="user-greet">أهلاً <span id="dashName"></span></div>
@@ -339,16 +335,13 @@ table{min-width:500px}
         <div id="dashNetBar"></div>
         <div class="week-card" id="weekCard"></div>
 
-        <!-- واجهة الموظف -->
         <div id="empView">
-            <!-- كارت الموظف الثابت (بيفتح أوفلاين) -->
             <div id="offlineBadgeArea" style="text-align: center; background: var(--card); padding: 20px; border-radius: 20px; border: 2px solid var(--primary); margin-bottom: 20px;">
                 <div style="font-weight: 900; margin-bottom: 10px; color: var(--primary);">كارت البصمة الخاص بك</div>
                 <div id="staticQrContainer" style="background: #fff; padding: 15px; border-radius: 15px; display: inline-block;"></div>
                 <div style="margin-top: 10px; font-size: 0.8rem; color: var(--text-dim);">وجه هذا الكود لكاميرا المدير لتسجيل الحضور</div>
             </div>
 
-            <!-- زر فتح الكاميرا الخاص بالموظف (لمسح كود المدير) -->
             <div class="scan-section" id="scanSection">
                 <button class="scan-main-btn" id="scanMainBtn" onclick="toggleScanner()"><i class="fa-solid fa-camera"></i></button>
                 <div class="scan-title" id="scanTitle">صوّر QR المدير</div>
@@ -367,16 +360,13 @@ table{min-width:500px}
                 <span id="syncBannerText">لديك بصمة محفوظة (أوفلاين) سيتم إرسالها فور توفر إنترنت</span>
             </div>
             
-            <!-- جدول المناوبات (فقط للموظف) -->
             <div class="emp-schedule-card" id="empScheduleCard">
                 <h4><i class="fa-solid fa-calendar-days"></i> جدول مناوباتك لهذا الأسبوع</h4>
                 <div class="emp-schedule-grid" id="empScheduleGrid"></div>
             </div>
         </div>
 
-        <!-- قسم الادمن -->
         <div id="adminSection" class="hidden" style="margin-top:10px;">
-            <!-- زر محطة البصمات للمدير -->
             <div class="admin-fast-scan" style="margin-bottom: 20px;">
                 <button class="btn btn-success btn-full btn-lg" onclick="toggleStationMode()" style="height: 70px; border-radius: 15px;">
                     <i class="fa-solid fa-tower-broadcast" style="margin-left: 10px;"></i> فتح محطة استقبال البصمات (كاميرا المدير)
@@ -385,9 +375,9 @@ table{min-width:500px}
             </div>
 
             <div class="admin-qr-box">
-                <div style="font-weight:700;margin-bottom:12px;color:var(--accent);"><i class="fa-solid fa-shield-halved"></i> كود QR للمدير (ثابت - صوّره من موبايل الموظف)</div>
+                <div style="font-weight:700;margin-bottom:12px;color:var(--accent);"><i class="fa-solid fa-shield-halved"></i> كود QR للمدير (ثابت)</div>
                 <div id="qrcode"></div>
-                <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-dim);">الكود ثابت ونشط دائماً - لا حاجة لتحديث الصفحة</div>
+                <div style="margin-top: 8px; font-size: 0.85rem; color: var(--text-dim);">الكود ثابت ونشط دائماً</div>
             </div>
 
             <div class="tabs-nav">
@@ -512,7 +502,6 @@ table{min-width:500px}
     </div>
 </div>
 
-<!-- مودال تصحيح -->
 <div id="corrModal" class="modal-overlay" role="dialog" aria-label="تصحيح">
     <div class="modal-box">
         <h3><i class="fa-solid fa-pen-to-square"></i> تصحيح سجل الحضور</h3>
@@ -529,7 +518,6 @@ table{min-width:500px}
     </div>
 </div>
 
-<!-- مودال تفاصيل الشيفت -->
 <div id="shiftDetailModal" class="modal-overlay" role="dialog" aria-label="تفاصيل">
     <div class="modal-box">
         <h3 id="shiftDetailTitle"><i class="fa-solid fa-clipboard-list"></i> تفاصيل المخالفات</h3>
@@ -538,7 +526,6 @@ table{min-width:500px}
     </div>
 </div>
 
-<!-- مودال QR الموظف -->
 <div id="empQrModalOverlay" class="modal-overlay" role="dialog" aria-label="QR الخاص بي">
     <div class="emp-qr-modal-box">
         <div class="eqm-name" id="eqmName">--</div>
@@ -554,6 +541,10 @@ const FB_CFG={apiKey:"AIzaSyBojsAZ73wpf-4cD8TviULncyxIIOUO2qY",authDomain:"brak-
 firebase.initializeApp(FB_CFG);
 const db=firebase.database();
 
+// تفعيل الاتصال الخفي (Long Polling) لرفع البصمة فوراً في الخلفية
+db.ref('.info/connected').on('value', () => {});
+db.ref().keepSynced(true); 
+
 const ADMINS=['mahmoud','abutamim','ahmed'];
 const EMP_QR_PREFIX="SHAMAA_EMP";
 const DAY_NAMES=['السبت','الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة'];
@@ -565,8 +556,15 @@ let stationScanner=null, lastScannedUser="", lastScanTime=0;
 let isScanning=false, isOnline=navigator.onLine, firebaseReady=false;
 let currentAttDate=TODAY_STR();
 
-function TODAY_STR(){return new Date().toISOString().split('T')[0]}
-const TODAY=TODAY_STR();
+function TODAY_STR() { 
+    try { 
+        return new Date().toISOString().split('T')[0]; 
+    } catch(e) { 
+        const d = new Date(); 
+        return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); 
+    } 
+}
+const TODAY = TODAY_STR();
 
 function getDeviceModel(){const ua=navigator.userAgent;if(/android/i.test(ua)){const m=ua.match(/Android.*;\s([^;]+)\sBuild/);return m?m[1].split(' ')[0]+' '+(m[1].split(' ')[1]||''):'Android';}else if(/iPhone|iPad|iPod/i.test(ua)){return"iPhone";}else if(/Windows/i.test(ua)){return"PC-Windows";}return"Mobile";}
 const PHONE_MODEL=getDeviceModel();
@@ -614,193 +612,57 @@ function toast(msg,type='info'){
 
 function showScreen(id){['screenLogin','screenBind','screenRejected','screenDash'].forEach(s=>{document.getElementById(s).classList.toggle('hidden',s!==id);});}
 
-function copyDevId(){
-    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(DEV_ID).then(()=>toast('تم النسخ','success')).catch(()=>fbCopy(DEV_ID));}else{fbCopy(DEV_ID);}
-}
+function copyDevId(){if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(DEV_ID).then(()=>toast('تم النسخ','success')).catch(()=>fbCopy(DEV_ID));}else{fbCopy(DEV_ID);}}
 function fbCopy(t){const ta=document.createElement('textarea');ta.value=t;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('تم النسخ','success');}catch(e){toast('تعذر النسخ','error');}document.body.removeChild(ta);}
 
-function getWeekDates(){
-    const ref=new Date();ref.setDate(ref.getDate()+weekOffset*7);
-    const diff=(ref.getDay()+1)%7;const sat=new Date(ref);sat.setDate(ref.getDate()-diff);
-    const days=[];
-    for(let i=0;i<7;i++){const dd=new Date(sat);dd.setDate(sat.getDate()+i);days.push({name:DAY_NAMES[i],date:dd,str:dd.toISOString().split('T')[0],isToday:dd.toDateString()===new Date().toDateString(),num:dd.getDate(),month:MONTH_NAMES[dd.getMonth()],dayIdx:i});}
-    return days;
-}
+function getWeekDates(){const ref=new Date();ref.setDate(ref.getDate()+weekOffset*7);const diff=(ref.getDay()+1)%7;const sat=new Date(ref);sat.setDate(ref.getDate()-diff);const days=[];for(let i=0;i<7;i++){const dd=new Date(sat);dd.setDate(sat.getDate()+i);days.push({name:DAY_NAMES[i],date:dd,str:dd.toISOString().split('T')[0],isToday:dd.toDateString()===new Date().toDateString(),num:dd.getDate(),month:MONTH_NAMES[dd.getMonth()],dayIdx:i});}return days;}
 function navigateWeek(dir){weekOffset+=dir;renderWeekCalendar();renderEmpSchedule();renderShiftsTable();}
 function resetWeekView(){weekOffset=0;renderWeekCalendar();renderEmpSchedule();renderShiftsTable();}
 
-function renderWeekCalendar(){
-    const days=getWeekDates();const todayInfo=days.find(d=>d.isToday);const dayNum=todayInfo?todayInfo.dayIdx+1:0;const sD=days[0],eD=days[6];
-    const rangeText=`من <span>${sD.num} ${sD.month}</span> إلى <span>${eD.num} ${eD.month} ${eD.date.getFullYear()}</span>`;
-    const counterText=dayNum>0?`يوم ${todayInfo.name} - ${dayNum}/7`:'';
-    let daysHTML='';
-    days.forEach(d=>{
-        const isPast=d.date<new Date(new Date().setHours(0,0,0,0))&&!d.isToday;
-        const dayFormatted=String(d.date.getDate()).padStart(2,'0');const monthFormatted=String(d.date.getMonth()+1).padStart(2,'0');const fullDateStr=`${dayFormatted}/${monthFormatted}`;
-        let st='';
-        if(ME&&ME.role!=='admin'){
-            let att=null;if(allUsers[ME.username]&&allUsers[ME.username].attendance&&allUsers[ME.username].attendance[d.str]){att=allUsers[ME.username].attendance[d.str];}else{const la=getLocalAttendance(ME.username);att=la[d.str]||null;}
-            if(att){if(att.status==='Present'){st=att._offline?`<div class="w-day-status offline"><i class="fa-solid fa-wifi-slash"></i></div>`:`<div class="w-day-status present"><i class="fa-solid fa-check"></i></div>`;}else{st=`<div class="w-day-status absent"><i class="fa-solid fa-xmark"></i></div>`;}}
-            else if(isPast){st=`<div class="w-day-status absent">--</div>`;}else{st=`<div class="w-day-status pending">--</div>`;}
-        }
-        daysHTML+=`<div class="w-day ${d.isToday?'is-today':''} ${isPast?'is-past':''}"><div class="w-day-name">${d.name}</div><div class="w-day-num" style="font-size:0.9rem;margin-top:5px;">${fullDateStr}</div>${st}</div>`;
-    });
-    document.getElementById('weekCard').innerHTML=`<div class="week-header"><div class="week-nav"><button class="week-nav-btn" onclick="navigateWeek(-1)"><i class="fa-solid fa-chevron-right"></i></button><div class="week-range"><i class="fa-regular fa-calendar" style="margin-left:6px;"></i>${rangeText}</div><button class="week-nav-btn" onclick="navigateWeek(1)"><i class="fa-solid fa-chevron-left"></i></button>${weekOffset!==0?`<button class="week-nav-btn" onclick="resetWeekView()" style="width:auto;padding:0 12px;font-size:0.75rem;">هذا الأسبوع</button>`:''}</div>${counterText?`<div class="week-day-counter">${counterText}</div>`:''}</div><div class="week-days-row">${daysHTML}</div>`;
-}
+function renderWeekCalendar(){const days=getWeekDates();const todayInfo=days.find(d=>d.isToday);const dayNum=todayInfo?todayInfo.dayIdx+1:0;const sD=days[0],eD=days[6];const rangeText=`من <span>${sD.num} ${sD.month}</span> إلى <span>${eD.num} ${eD.month} ${eD.date.getFullYear()}</span>`;const counterText=dayNum>0?`يوم ${todayInfo.name} - ${dayNum}/7`:'';let daysHTML='';days.forEach(d=>{const isPast=d.date<new Date(new Date().setHours(0,0,0,0))&&!d.isToday;const dayFormatted=String(d.date.getDate()).padStart(2,'0');const monthFormatted=String(d.date.getMonth()+1).padStart(2,'0');const fullDateStr=`${dayFormatted}/${monthFormatted}`;let st='';if(ME&&ME.role!=='admin'){let att=null;if(allUsers[ME.username]&&allUsers[ME.username].attendance&&allUsers[ME.username].attendance[d.str]){att=allUsers[ME.username].attendance[d.str];}else{const la=getLocalAttendance(ME.username);att=la[d.str]||null;}if(att){if(att.status==='Present'){st=att._offline?`<div class="w-day-status offline"><i class="fa-solid fa-wifi-slash"></i></div>`:`<div class="w-day-status present"><i class="fa-solid fa-check"></i></div>`;}else{st=`<div class="w-day-status absent"><i class="fa-solid fa-xmark"></i></div>`;}}else if(isPast){st=`<div class="w-day-status absent">--</div>`;}else{st=`<div class="w-day-status pending">--</div>`;}}daysHTML+=`<div class="w-day ${d.isToday?'is-today':''} ${isPast?'is-past':''}"><div class="w-day-name">${d.name}</div><div class="w-day-num" style="font-size:0.9rem;margin-top:5px;">${fullDateStr}</div>${st}</div>`;});document.getElementById('weekCard').innerHTML=`<div class="week-header"><div class="week-nav"><button class="week-nav-btn" onclick="navigateWeek(-1)"><i class="fa-solid fa-chevron-right"></i></button><div class="week-range"><i class="fa-regular fa-calendar" style="margin-left:6px;"></i>${rangeText}</div><button class="week-nav-btn" onclick="navigateWeek(1)"><i class="fa-solid fa-chevron-left"></i></button>${weekOffset!==0?`<button class="week-nav-btn" onclick="resetWeekView()" style="width:auto;padding:0 12px;font-size:0.75rem;">هذا الأسبوع</button>`:''}</div>${counterText?`<div class="week-day-counter">${counterText}</div>`:''}</div><div class="week-days-row">${daysHTML}</div>`;}
 
-function renderEmpSchedule(){
-    if(!ME||ME.role==='admin')return;const grid=document.getElementById('empScheduleGrid');if(!grid)return;const days=getWeekDates();const u=ME.username;const wk=weekKey(days[0].str);const sched=allSched[u]&&allSched[u][wk]?allSched[u][wk]:{};const localSched=LS.get('sched_'+u+'_'+wk,null);let html='';
-    days.forEach((d,i)=>{let val=sched[i]||(localSched?localSched[i]:null)||'--';let cls='work',display=val;if(val==='Off'){cls='off';display='إجازة';}else if(val==='Annual Leave'){cls='leave';display='سنوية';}else if(val==='Sick Leave'){cls='leave';display='مرضية';}else if(val==='--'){cls='off';display='--';}const isTodayCls=d.isToday?'is-today-sched':'';html+=`<div class="emp-sched-day ${isTodayCls}"><span class="day-label">${d.name}</span><span class="day-value ${cls}">${display}</span></div>`;});
-    grid.innerHTML=html;
-}
+function renderEmpSchedule(){if(!ME||ME.role==='admin')return;const grid=document.getElementById('empScheduleGrid');if(!grid)return;const days=getWeekDates();const u=ME.username;const wk=weekKey(days[0].str);const sched=allSched[u]&&allSched[u][wk]?allSched[u][wk]:{};const localSched=LS.get('sched_'+u+'_'+wk,null);let html='';days.forEach((d,i)=>{let val=sched[i]||(localSched?localSched[i]:null)||'--';let cls='work',display=val;if(val==='Off'){cls='off';display='إجازة';}else if(val==='Annual Leave'){cls='leave';display='سنوية';}else if(val==='Sick Leave'){cls='leave';display='مرضية';}else if(val==='--'){cls='off';display='--';}const isTodayCls=d.isToday?'is-today-sched':'';html+=`<div class="emp-sched-day ${isTodayCls}"><span class="day-label">${d.name}</span><span class="day-value ${cls}">${display}</span></div>`;});grid.innerHTML=html;}
 
-function generateEmpQR(containerId,username,realName){
-    const data=`${EMP_QR_PREFIX}|${username}|${DEV_ID}|${realName||username}`;const c=document.getElementById(containerId);c.innerHTML='';
-    try{new QRCode(c,{text:data,width:180,height:180,colorDark:"#0f172a",colorLight:"#ffffff"});}catch(e){}
-}
+function generateEmpQR(containerId,username,realName){const data=`${EMP_QR_PREFIX}|${username}|${DEV_ID}|${realName||username}`;const c=document.getElementById(containerId);c.innerHTML='';try{new QRCode(c,{text:data,width:180,height:180,colorDark:"#0f172a",colorLight:"#ffffff"});}catch(e){}}
+function generateQR(){const container=document.getElementById('qrcode');if(!container)return;const staticAdminCode=`SHAMAA_ADMIN|${ME.username}`;container.innerHTML='';new QRCode(container,{text:staticAdminCode,width:220,height:220,correctLevel:QRCode.CorrectLevel.H});}
+function renderStaticBadge(){if(!ME||ME.role==='admin')return;const container=document.getElementById('staticQrContainer');if(!container)return;container.innerHTML='';const qrData=`SHAMAA_ID|${ME.username}|${ME.realName||ME.username}`;new QRCode(container,{text:qrData,width:200,height:200,colorDark:"#000000",colorLight:"#ffffff"});}
 
-function generateQR(){
-    const container=document.getElementById('qrcode');if(!container)return;
-    const staticAdminCode=`SHAMAA_ADMIN|${ME.username}`;container.innerHTML='';
-    new QRCode(container,{text:staticAdminCode,width:220,height:220,correctLevel:QRCode.CorrectLevel.H});
-}
+function doLogin(){const u=document.getElementById('loginUser').value.trim().toLowerCase();const p=document.getElementById('loginPass').value.trim();if(!u||!p){toast('أدخل اسم المستخدم وكلمة المرور','warn');return;}if(isOnline&&firebaseReady){if(!allUsers[u]){toast('اسم المستخدم غير موجود','error');return;}if(allUsers[u].password!==p){toast('كلمة المرور غير صحيحة','error');return;}ME={username:u,...allUsers[u]};ME.role=ADMINS.includes(u)?'admin':'employee';saveLocalCredentials(u,allUsers[u]);addLocalUsername(u);localStorage.setItem('sh_active_user',u);if(ME.role!=='admin')syncLocalAttToFirebase(u);if(ME.role==='admin'){enterDashboard();return;}const approved=ME.approvedDevice;if(approved&&approved===DEV_ID){enterDashboard();}else if(approved&&approved!==DEV_ID){document.getElementById('rejDevId').textContent=DEV_ID;showScreen('screenRejected');}else{showBindScreen(!!ME.pendingDevice);}}else{const lc=getLocalCredentials(u);if(!lc){toast('لازم تفتح نت أول مرة بس عشان تسجل دخول','error');return;}if(lc.password!==p){toast('كلمة المرور غلط (أوفلاين)','error');return;}if(ADMINS.includes(u)){toast('المدير لازم يكون متصل بالنت','error');return;}ME={username:u,realName:lc.realName,password:lc.password,role:lc.role,approvedDevice:lc.approvedDevice,_offlineMode:true};if(ME.approvedDevice&&ME.approvedDevice!==DEV_ID){document.getElementById('rejDevId').textContent=DEV_ID;showScreen('screenRejected');return;}if(!ME.approvedDevice){toast('الجهاز مش مربوط - لازم تربطه أول مرة بالنت','warn');return;}toast('دخول أوفلاين - البصمات هتتحفظ محلياً','info');enterDashboard();}}
 
-function renderStaticBadge(){
-    if(!ME||ME.role==='admin')return;const container=document.getElementById('staticQrContainer');if(!container)return;container.innerHTML='';
-    const qrData=`SHAMAA_ID|${ME.username}|${ME.realName||ME.username}`;
-    new QRCode(container,{text:qrData,width:200,height:200,colorDark:"#000000",colorLight:"#ffffff"});
-}
+function doLogout(){ME=null;localStorage.removeItem('sh_active_user');if(bindCheckTimer){clearInterval(bindCheckTimer);bindCheckTimer=null;}stopEmpScanner();stopMainScanner();stopStationScanner();document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';showScreen('screenLogin');updateNetUI();}
 
-function doLogin(){
-    const u=document.getElementById('loginUser').value.trim().toLowerCase();const p=document.getElementById('loginPass').value.trim();
-    if(!u||!p){toast('أدخل اسم المستخدم وكلمة المرور','warn');return;}
-    if(isOnline&&firebaseReady){
-        if(!allUsers[u]){toast('اسم المستخدم غير موجود','error');return;}
-        if(allUsers[u].password!==p){toast('كلمة المرور غير صحيحة','error');return;}
-        ME={username:u,...allUsers[u]};ME.role=ADMINS.includes(u)?'admin':'employee';
-        saveLocalCredentials(u,allUsers[u]);addLocalUsername(u);localStorage.setItem('sh_active_user',u);
-        if(ME.role!=='admin')syncLocalAttToFirebase(u);
-        if(ME.role==='admin'){enterDashboard();return;}
-        const approved=ME.approvedDevice;if(approved&&approved===DEV_ID){enterDashboard();}else if(approved&&approved!==DEV_ID){document.getElementById('rejDevId').textContent=DEV_ID;showScreen('screenRejected');}else{showBindScreen(!!ME.pendingDevice);}
-    }else{
-        const lc=getLocalCredentials(u);if(!lc){toast('لازم تفتح نت أول مرة بس عشان تسجل دخول','error');return;}
-        if(lc.password!==p){toast('كلمة المرور غلط (أوفلاين)','error');return;}
-        if(ADMINS.includes(u)){toast('المدير لازم يكون متصل بالنت','error');return;}
-        ME={username:u,realName:lc.realName,password:lc.password,role:lc.role,approvedDevice:lc.approvedDevice,_offlineMode:true};
-        if(ME.approvedDevice&&ME.approvedDevice!==DEV_ID){document.getElementById('rejDevId').textContent=DEV_ID;showScreen('screenRejected');return;}
-        if(!ME.approvedDevice){toast('الجهاز مش مربوط - لازم تربطه أول مرة بالنت','warn');return;}
-        toast('دخول أوفلاين - البصمات هتتحفظ محلياً','info');enterDashboard();
-    }
-}
-
-function doLogout(){
-    ME=null;localStorage.removeItem('sh_active_user');
-    if(bindCheckTimer){clearInterval(bindCheckTimer);bindCheckTimer=null;}
-    stopEmpScanner();stopMainScanner();stopStationScanner();
-    document.getElementById('loginUser').value='';document.getElementById('loginPass').value='';showScreen('screenLogin');updateNetUI();
-}
-
-function showBindScreen(hasPending){
-    if(!isOnline){toast('لازم تكون متصل بالنت عشان تربط الجهاز','warn');return;}
-    document.getElementById('bindDevId').textContent=DEV_ID;document.getElementById('deviceInfoLabel').innerHTML=`<i class="fa-solid fa-mobile-screen-button"></i> ${PHONE_MODEL}`;document.getElementById('bindQrName').textContent=ME.realName||ME.username;generateEmpQR('bindQrcode',ME.username,ME.realName);
-    const sa=document.getElementById('bindStatusArea'),bb=document.getElementById('bindBtn');
-    if(hasPending){bb.classList.add('hidden');sa.innerHTML=`<div class="bind-status-card waiting"><span class="bind-spinner"></span> تم إرسال طلب الربط - انتظر المدير يعتمد الجهاز</div>`;startBindChecker();}
-    else{bb.classList.remove('hidden');sa.innerHTML='';}showScreen('screenBind');
-}
-function requestBind(){
-    if(!ME)return;document.getElementById('bindBtn').classList.add('hidden');const sa=document.getElementById('bindStatusArea');sa.innerHTML=`<div class="bind-status-card waiting"><span class="bind-spinner"></span> جاري الإرسال...</div>`;
-    db.ref(`users/${ME.username}/pendingDevice`).set(DEV_ID).then(()=>{toast('تم إرسال طلب الربط','success');sa.innerHTML=`<div class="bind-status-card waiting"><span class="bind-spinner"></span> انتظر اعتماد المدير</div>`;startBindChecker();}).catch(()=>{toast('خطأ','error');sa.innerHTML='';document.getElementById('bindBtn').classList.remove('hidden');});
-}
-function startBindChecker(){
-    if(bindCheckTimer)clearInterval(bindCheckTimer);bindCheckTimer=setInterval(()=>{if(!ME||!isOnline)return;db.ref(`users/${ME.username}/approvedDevice`).once('value',snap=>{if(snap.val()===DEV_ID){clearInterval(bindCheckTimer);bindCheckTimer=null;document.getElementById('bindStatusArea').innerHTML=`<div class="bind-status-card approved"><i class="fa-solid fa-circle-check" style="font-size:1.5rem;margin-bottom:8px;display:block;"></i> تم اعتماد جهازك!</div>`;toast('تم اعتماد الجهاز!','success');saveLocalCredentials(ME.username,{...ME,approvedDevice:DEV_ID});setTimeout(()=>{ME.approvedDevice=DEV_ID;ME._offlineMode=false;enterDashboard();},1200);}});},3000);
-}
+function showBindScreen(hasPending){if(!isOnline){toast('لازم تكون متصل بالنت عشان تربط الجهاز','warn');return;}document.getElementById('bindDevId').textContent=DEV_ID;document.getElementById('deviceInfoLabel').innerHTML=`<i class="fa-solid fa-mobile-screen-button"></i> ${PHONE_MODEL}`;document.getElementById('bindQrName').textContent=ME.realName||ME.username;generateEmpQR('bindQrcode',ME.username,ME.realName);const sa=document.getElementById('bindStatusArea'),bb=document.getElementById('bindBtn');if(hasPending){bb.classList.add('hidden');sa.innerHTML=`<div class="bind-status-card waiting"><span class="bind-spinner"></span> تم إرسال طلب الربط - انتظر المدير يعتمد الجهاز</div>`;startBindChecker();}else{bb.classList.remove('hidden');sa.innerHTML='';}showScreen('screenBind');}
+function requestBind(){if(!ME)return;document.getElementById('bindBtn').classList.add('hidden');const sa=document.getElementById('bindStatusArea');sa.innerHTML=`<div class="bind-status-card waiting"><span class="bind-spinner"></span> جاري الإرسال...</div>`;db.ref(`users/${ME.username}/pendingDevice`).set(DEV_ID).then(()=>{toast('تم إرسال طلب الربط','success');sa.innerHTML=`<div class="bind-status-card waiting"><span class="bind-spinner"></span> انتظر اعتماد المدير</div>`;startBindChecker();}).catch(()=>{toast('خطأ','error');sa.innerHTML='';document.getElementById('bindBtn').classList.remove('hidden');});}
+function startBindChecker(){if(bindCheckTimer)clearInterval(bindCheckTimer);bindCheckTimer=setInterval(()=>{if(!ME||!isOnline)return;db.ref(`users/${ME.username}/approvedDevice`).once('value',snap=>{if(snap.val()===DEV_ID){clearInterval(bindCheckTimer);bindCheckTimer=null;document.getElementById('bindStatusArea').innerHTML=`<div class="bind-status-card approved"><i class="fa-solid fa-circle-check" style="font-size:1.5rem;margin-bottom:8px;display:block;"></i> تم اعتماد جهازك!</div>`;toast('تم اعتماد الجهاز!','success');saveLocalCredentials(ME.username,{...ME,approvedDevice:DEV_ID});setTimeout(()=>{ME.approvedDevice=DEV_ID;ME._offlineMode=false;enterDashboard();},1200);}});},3000);}
 
 function openEmpQrModal(){if(!ME)return;document.getElementById('eqmName').textContent=ME.realName||ME.username;document.getElementById('eqmUser').textContent='@'+ME.username;generateEmpQR('empQrModal',ME.username,ME.realName);document.getElementById('empQrModalOverlay').classList.add('open');}
 function closeEmpQrModal(){document.getElementById('empQrModalOverlay').classList.remove('open');}
 
-function enterDashboard(){
-    showScreen('screenDash');document.getElementById('dashName').textContent=ME.realName||ME.username;const isAdmin=ME.role==='admin';
-    document.getElementById('adminSection').classList.toggle('hidden',!isAdmin);document.getElementById('empView').classList.toggle('hidden',isAdmin);document.getElementById('btnMyQr').classList.toggle('hidden',isAdmin);document.getElementById('empScheduleCard').classList.toggle('hidden',isAdmin);
-    currentAttDate=TODAY;updateAttDateLabel();
-    if(isAdmin){generateQR();fillUserSelects();fillReportEmpFilter();fillManualBindSelect();initReportDates('thisWeek');}
-    renderWeekCalendar();renderEmpSchedule();renderAttTable();renderShiftsTable();updateNetUI();updateSyncBanner();renderStaticBadge();
-    if(!isAdmin&&!ME._offlineMode)listenToMyStatus();if(!isAdmin&&ME._offlineMode)renderEmpStatusLocal();if(!isAdmin)listenToMySchedule();
-}
+function enterDashboard(){showScreen('screenDash');document.getElementById('dashName').textContent=ME.realName||ME.username;const isAdmin=ME.role==='admin';document.getElementById('adminSection').classList.toggle('hidden',!isAdmin);document.getElementById('empView').classList.toggle('hidden',isAdmin);document.getElementById('btnMyQr').classList.toggle('hidden',isAdmin);document.getElementById('empScheduleCard').classList.toggle('hidden',isAdmin);currentAttDate=TODAY;updateAttDateLabel();if(isAdmin){generateQR();fillUserSelects();fillReportEmpFilter();fillManualBindSelect();initReportDates('thisWeek');}renderWeekCalendar();renderEmpSchedule();renderAttTable();renderShiftsTable();updateNetUI();updateSyncBanner();renderStaticBadge();if(!isAdmin&&!ME._offlineMode)listenToMyStatus();if(!isAdmin&&ME._offlineMode)renderEmpStatusLocal();if(!isAdmin)listenToMySchedule();}
 
 function listenToMyStatus(){if(!ME||ME.role==='admin')return;db.ref(`users/${ME.username}/attendance/${TODAY}`).on('value',snap=>{renderEmpStatusBar(snap.val());renderWeekCalendar();});}
 function listenToMySchedule(){if(!ME||ME.role==='admin')return;const wk=weekKey(TODAY);db.ref(`schedules/${ME.username}/${wk}`).on('value',snap=>{if(snap.val()){allSched[ME.username]=allSched[ME.username]||{};allSched[ME.username][wk]=snap.val();LS.set('sched_'+ME.username+'_'+wk,snap.val());renderEmpSchedule();}});}
 function renderEmpStatusLocal(){const la=getLocalAttendance(ME.username);renderEmpStatusBar(la[TODAY]||null);}
+function renderEmpStatusBar(d){const bar=document.getElementById('statusBar');if(!bar)return;const la=getLocalAttendance(ME.username);const data=d||la[TODAY]||null;if(data){const hi=!!data.clockIn,ho=!!data.clockOut;const offBadge=data._offline?' <span class="badge badge-off" style="font-size:0.65rem;">غير مرفوع</span>':'';bar.innerHTML=`<div class="status-chip"><div class="chip-label">الحالة</div><div class="chip-value">${data.status==='Present'?'حاضر':data.status||'--'}${offBadge}</div></div><div class="status-chip"><div class="chip-label">وقت الدخول</div><div class="chip-value">${hi?data.clockIn:'--:--'}</div></div><div class="status-chip"><div class="chip-label">وقت الانصراف</div><div class="chip-value">${ho?data.clockOut:'--:--'}</div></div>`;}else{bar.innerHTML=`<div class="status-chip" style="flex:1;"><div class="chip-label">حالة اليوم</div><div class="chip-value not-yet">لم يتم البصمة بعد</div></div>`;}}
 
-function renderEmpStatusBar(d){
-    const bar=document.getElementById('statusBar');if(!bar)return;const la=getLocalAttendance(ME.username);const data=d||la[TODAY]||null;
-    if(data){const hi=!!data.clockIn,ho=!!data.clockOut;const offBadge=data._offline?' <span class="badge badge-off" style="font-size:0.65rem;">غير مرفوع</span>':'';
-    bar.innerHTML=`<div class="status-chip"><div class="chip-label">الحالة</div><div class="chip-value">${data.status==='Present'?'حاضر':data.status||'--'}${offBadge}</div></div><div class="status-chip"><div class="chip-label">وقت الدخول</div><div class="chip-value">${hi?data.clockIn:'--:--'}</div></div><div class="status-chip"><div class="chip-label">وقت الانصراف</div><div class="chip-value">${ho?data.clockOut:'--:--'}</div></div>`;
-    }else{bar.innerHTML=`<div class="status-chip" style="flex:1;"><div class="chip-label">حالة اليوم</div><div class="chip-value not-yet">لم يتم البصمة بعد</div></div>`;}
-}
-
-// ===== ماسح الموظف (لمسح كود المدير) =====
 function toggleScanner(){if(isScanning){stopMainScanner();}else{startScan();}}
-function startScan(){
-    const r=document.getElementById('reader'),btn=document.getElementById('scanMainBtn');const title=document.getElementById('scanTitle'),desc=document.getElementById('scanDesc'),steps=document.getElementById('scanSteps');
-    r.classList.remove('hidden');btn.classList.add('scanning');btn.innerHTML='<i class="fa-solid fa-xmark"></i>';title.textContent='الكاميرا مفتوحة... صوّر QR المدير';title.style.color='var(--danger)';desc.textContent='قرّب الكاميرا من شاشة المدير اللي عليها كود QR';steps.classList.add('hidden');isScanning=true;
-    mainScanner=new Html5Qrcode("reader");mainScanner.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:250}},(text)=>{stopMainScanner();processScannedQR(text);},()=>{}).catch(()=>{stopMainScanner();toast('تعذر فتح الكاميرا','error');});
-}
-function stopMainScanner(){
-    if(mainScanner){mainScanner.stop().then(()=>{document.getElementById('reader').classList.add('hidden');mainScanner=null;}).catch(()=>{document.getElementById('reader').classList.add('hidden');mainScanner=null;});}
-    const btn=document.getElementById('scanMainBtn'),title=document.getElementById('scanTitle'),desc=document.getElementById('scanDesc'),steps=document.getElementById('scanSteps');
-    btn.classList.remove('scanning');btn.innerHTML='<i class="fa-solid fa-camera"></i>';title.textContent='صوّر QR المدير';title.style.color='var(--text)';desc.textContent='اضغط الزر ده وصرّب الكاميرا نحو الـ QR اللي على شاشة المدير عشان تسجل بصمتك';steps.classList.remove('hidden');isScanning=false;
-}
+function startScan(){const r=document.getElementById('reader'),btn=document.getElementById('scanMainBtn');const title=document.getElementById('scanTitle'),desc=document.getElementById('scanDesc'),steps=document.getElementById('scanSteps');r.classList.remove('hidden');btn.classList.add('scanning');btn.innerHTML='<i class="fa-solid fa-xmark"></i>';title.textContent='الكاميرا مفتوحة... صوّر QR المدير';title.style.color='var(--danger)';desc.textContent='قرّب الكاميرا من شاشة المدير اللي عليها كود QR';steps.classList.add('hidden');isScanning=true;mainScanner=new Html5Qrcode("reader");mainScanner.start({facingMode:"environment"},{fps:10,qrbox:{width:250,height:250}},(text)=>{stopMainScanner();processScannedQR(text);},()=>{}).catch((err)=>{stopMainScanner();toast('تأكد من السماح للكاميرا في إعدادات المتصفح، ويجب أن يكون الموقع على HTTPS','error');console.error("Camera Error:", err);});}
+function stopMainScanner(){if(mainScanner){mainScanner.stop().then(()=>{document.getElementById('reader').classList.add('hidden');mainScanner=null;}).catch(()=>{document.getElementById('reader').classList.add('hidden');mainScanner=null;});}const btn=document.getElementById('scanMainBtn'),title=document.getElementById('scanTitle'),desc=document.getElementById('scanDesc'),steps=document.getElementById('scanSteps');btn.classList.remove('scanning');btn.innerHTML='<i class="fa-solid fa-camera"></i>';title.textContent='صوّر QR المدير';title.style.color='var(--text)';desc.textContent='اضغط الزر ده وصرّب الكاميرا نحو الـ QR اللي على شاشة المدير عشان تسجل بصمتك';steps.classList.remove('hidden');isScanning=false;}
 
-function processScannedQR(text){
-    if(!ME)return toast('سجل دخولك أولاً','error');
-    if(text.startsWith('SHAMAA_ADMIN|')){
-        const now=new Date();const time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');const today=TODAY_STR();
-        let la=getLocalAttendance(ME.username);let cd=la[today]||{};
-        if(!cd.clockIn){savePunchOffline('in',time);toast('تم تسجيل حضورك بنجاح!','success');}
-        else if(!cd.clockOut){savePunchOffline('out',time);toast('تم تسجيل انصرافك بنجاح!','info');}
-        else{toast('أنت مسجل حضور وانصراف بالفعل اليوم','warn');}
-        stopMainScanner();
-    }else{toast('كود غير صحيح','error');}
-}
+function processScannedQR(text){if(!ME)return toast('سجل دخولك أولاً','error');if(text.startsWith('SHAMAA_ADMIN|')){const now=new Date();const time=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');const today=TODAY_STR();let la=getLocalAttendance(ME.username);let cd=la[today]||{};if(!cd.clockIn){savePunchOffline('in',time);toast('تم تسجيل حضورك بنجاح!','success');}else if(!cd.clockOut){savePunchOffline('out',time);toast('تم تسجيل انصرافك بنجاح!','info');}else{toast('أنت مسجل حضور وانصراف بالفعل اليوم','warn');}stopMainScanner();}else{toast('كود غير صحيح','error');}}
 
-function savePunchOffline(type,time){
-    const today=TODAY_STR();let la=getLocalAttendance(ME.username);if(!la[today])la[today]={status:'Present',date:today};
-    if(type==='in'){la[today].clockIn=time;la[today].status='Present';}else{la[today].clockOut=time;}
-    la[today]._offline=true;LS.set('att_'+ME.username,la);
-    let q=LS.get('sync_queue',[]);q.push({username:ME.username,date:today,time:time,type:type,deviceId:DEV_ID,timestamp:Date.now()});LS.set('sync_queue',q);
-    renderEmpStatusLocal();renderWeekCalendar();updateSyncBanner();const label=type==='in'?'حضور':'انصراف';showPunchConfirm('offline',`تم تسجيل ${label}`,time,'تم الحفظ بنجاح (سيتم الرفع فور توفر إنترنت)');if(navigator.onLine)syncOfflinePunches();
-}
+function savePunchOffline(type,time){const today=TODAY_STR();let la=getLocalAttendance(ME.username);if(!la[today])la[today]={status:'Present',date:today};if(type==='in'){la[today].clockIn=time;la[today].status='Present';}else{la[today].clockOut=time;}la[today]._offline=true;LS.set('att_'+ME.username,la);let q=LS.get('sync_queue',[]);q.push({username:ME.username,date:today,time:time,type:type,deviceId:DEV_ID,timestamp:Date.now()});LS.set('sync_queue',q);renderEmpStatusLocal();renderWeekCalendar();updateSyncBanner();const label=type==='in'?'حضور':'انصراف';showPunchConfirm('offline',`تم تسجيل ${label}`,time,'يتم الرفع في الخلفية تلقائياً');if(navigator.onLine)syncOfflinePunches();}
 
 function showPunchConfirm(type,title,time,sub){const o=document.getElementById('punchConfirmOverlay'),b=document.getElementById('punchConfirmBox');const c={success:{ic:'success',in:'circle-check',co:'var(--success)'},error:{ic:'error',in:'circle-xmark',co:'var(--danger)'},offline:{ic:'offline',in:'wifi-slash',co:'var(--off-color)'}};const x=c[type]||c.success;b.innerHTML=`<div class="punch-confirm-icon ${x.ic}"><i class="fa-solid fa-${x.in}"></i></div><div class="punch-confirm-title" style="color:${x.co}">${title}</div><div class="punch-confirm-time" style="color:${x.co}">${time}</div><div class="punch-confirm-sub">${sub}</div><button class="btn btn-primary btn-full" onclick="closePunchConfirm()">تم</button>`;o.classList.add('open');setTimeout(()=>{o.classList.remove('open');},4500);}
 function closePunchConfirm(e){if(e&&e.target!==e.currentTarget&&!e.target.closest('.btn'))return;document.getElementById('punchConfirmOverlay').classList.remove('open');}
 
-async function syncOfflinePunches(){
-    if(!navigator.onLine||!firebaseReady)return;let q=LS.get('sync_queue',[]);if(q.length===0)return;
-    const db2=document.getElementById('dashNetBar');if(db2)db2.innerHTML=`<div class="net-bar syncing"><span class="bind-spinner"></span> جاري رفع (${q.length}) بصمة...</div>`;
-    for(let i=0;i<q.length;i++){const p=q[i];try{const ref=db.ref(`users/${p.username}/attendance/${p.date}`);const snap=await ref.once('value');const existing=snap.val()||{};let upd={date:p.date};if(p.type==='in'){upd.clockIn=p.time;upd.status='Present';upd.deviceId=p.deviceId;}else{upd.clockOut=p.time;}const finalData={...existing,...upd};await ref.update(finalData);q=q.filter(x=>x.timestamp!==p.timestamp);LS.set('sync_queue',q);let la=getLocalAttendance(p.username);if(la[p.date])delete la[p.date]._offline;LS.set('att_'+p.username,la);}catch(e){console.error("فشلت مزامنة بصمة",e);}}
-    updateNetUI();updateSyncBanner();renderWeekCalendar();
-}
+async function syncOfflinePunches(){if(!navigator.onLine||!firebaseReady)return;let q=LS.get('sync_queue',[]);if(q.length===0)return;const db2=document.getElementById('dashNetBar');if(db2)db2.innerHTML=`<div class="net-bar syncing"><span class="bind-spinner"></span> جاري رفع (${q.length}) بصمة...</div>`;for(let i=0;i<q.length;i++){const p=q[i];try{const ref=db.ref(`users/${p.username}/attendance/${p.date}`);const snap=await ref.once('value');const existing=snap.val()||{};let upd={date:p.date};if(p.type==='in'){upd.clockIn=p.time;upd.status='Present';upd.deviceId=p.deviceId;}else{upd.clockOut=p.time;}const finalData={...existing,...upd};await ref.update(finalData);q=q.filter(x=>x.timestamp!==p.timestamp);LS.set('sync_queue',q);let la=getLocalAttendance(p.username);if(la[p.date])delete la[p.date]._offline;LS.set('att_'+p.username,la);}catch(e){console.error("فشلت مزامنة بصمة",e);break;}}updateNetUI();updateSyncBanner();renderWeekCalendar();}
 function syncLocalAttToFirebase(u){setTimeout(syncOfflinePunches,2000);}
 
-// ===== ماسح المدير المستمر (محطة البصمات) =====
-function toggleStationMode(){
-    const reader=document.getElementById('stationReader');
-    if(!stationScanner){reader.classList.remove('hidden');stationScanner=new Html5Qrcode("stationReader");
-        stationScanner.start({facingMode:"user"},{fps:25,qrbox:300},(text)=>{handleContinuousScan(text);},()=>{}).then(()=>toast("محطة الاستقبال جاهزة.. المسح مستمر","success")).catch(()=>{reader.classList.add('hidden');toast('تعذر فتح الكاميرا','error');});
-    }else{stopStationScanner();}
-}
-function stopStationScanner(){
-    if(stationScanner){stationScanner.stop().then(()=>{document.getElementById('stationReader').classList.add('hidden');stationScanner=null;}).catch(()=>{document.getElementById('stationReader').classList.add('hidden');stationScanner=null;});}
-}
-function handleContinuousScan(text){
-    const now=Date.now();if(text===lastScannedUser&&now-lastScanTime<10000)return;const p=text.split('|');
-    if(p[0]==="SHAMAA_ID"){const user=p[1];const name=p[2];lastScannedUser=text;lastScanTime=now;const today=TODAY_STR();const punchTime=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-        db.ref(`users/${user}/attendance/${today}`).once('value').then(snap=>{const data=snap.val();let upd={date:today,status:'Present'};if(!data||!data.clockIn){upd.clockIn=punchTime;toast(`مرحباً ${name}: تسجيل دخول`,"success");}else if(!data.clockOut){upd.clockOut=punchTime;toast(`وداعاً ${name}: تسجيل خروج`,"info");}else{return;}
-        db.ref(`users/${user}/attendance/${today}`).update(upd).then(()=>{try{new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3').play();}catch(e){}if(navigator.vibrate)navigator.vibrate(200);});});
-    }
-}
+function toggleStationMode(){const reader=document.getElementById('stationReader');if(!stationScanner){reader.classList.remove('hidden');stationScanner=new Html5Qrcode("stationReader");stationScanner.start({facingMode:"user"},{fps:25,qrbox:300},(text)=>{handleContinuousScan(text);},()=>{}).then(()=>toast("محطة الاستقبال جاهزة.. المسح مستمر","success")).catch((err)=>{reader.classList.add('hidden');toast('تأكد من السماح للكاميرا، ويجب أن يكون الموقع على HTTPS','error');console.error("Station Camera Error:", err);});}else{stopStationScanner();}}
+function stopStationScanner(){if(stationScanner){stationScanner.stop().then(()=>{document.getElementById('stationReader').classList.add('hidden');stationScanner=null;}).catch(()=>{document.getElementById('stationReader').classList.add('hidden');stationScanner=null;});}}
+function handleContinuousScan(text){const now=Date.now();if(text===lastScannedUser&&now-lastScanTime<10000)return;const p=text.split('|');if(p[0]==="SHAMAA_ID"){const user=p[1];const name=p[2];lastScannedUser=text;lastScanTime=now;const today=TODAY_STR();const punchTime=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});db.ref(`users/${user}/attendance/${today}`).once('value').then(snap=>{const data=snap.val();let upd={date:today,status:'Present'};if(!data||!data.clockIn){upd.clockIn=punchTime;toast(`مرحباً ${name}: تسجيل دخول`,"success");}else if(!data.clockOut){upd.clockOut=punchTime;toast(`وداعاً ${name}: تسجيل خروج`,"info");}else{return;}db.ref(`users/${user}/attendance/${today}`).update(upd).then(()=>{try{new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3').play();}catch(e){}if(navigator.vibrate)navigator.vibrate(200);});});}}
 
-// ===== إدارة الأجهزة =====
 function stopEmpScanner(){if(empScanner){empScanner.stop().then(()=>{document.getElementById('empReader').classList.add('hidden');empScanner=null;}).catch(()=>{document.getElementById('empReader').classList.add('hidden');empScanner=null;});}}
 function startEmpScan(){stopEmpScanner();const r=document.getElementById('empReader');r.classList.remove('hidden');document.getElementById('scanEmpResult').innerHTML='';empScanner=new Html5Qrcode("empReader");empScanner.start({facingMode:"environment"},{fps:10,qrbox:{width:240,height:240}},(text)=>{stopEmpScanner();handleEmpScan(text);},()=>{}).catch(()=>{r.classList.add('hidden');empScanner=null;toast('تعذر فتح الكاميرا','error');});}
 function handleEmpScan(text){const p=text.split('|');if(p.length<4||p[0]!==EMP_QR_PREFIX){toast('الكود ده مش QR موظف صحيح','error');return;}const su=p[1],sd=p[2],sn=p[3];if(!allUsers[su]){document.getElementById('scanEmpResult').innerHTML=`<div class="scan-emp-result" style="background:rgba(244,63,94,0.08);border-color:var(--danger);"><div class="ser-name" style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> مستخدم غير موجود</div></div>`;return;}const isBound=(allUsers[su].approvedDevice||'')===sd;let h=`<div class="scan-emp-result"><div class="ser-name"><i class="fa-solid fa-user-check"></i> ${sn}</div><div class="ser-dev"><i class="fa-solid fa-mobile-screen-button" style="margin-left:4px;"></i> ${sd}</div>`;if(isBound){h+=`<div style="color:var(--success);font-weight:700;"><i class="fa-solid fa-circle-check"></i> مربط بالفعل</div>`;}else{h+=`<div style="display:flex;gap:8px;justify-content:center;margin-top:12px;"><button class="btn btn-success btn-sm" onclick="requestBindFromAdmin('${su}','${sd}','${sn}')"><i class="fa-solid fa-link"></i> إرسال طلب ربط</button></div>`;}h+='</div>';document.getElementById('scanEmpResult').innerHTML=h;}
@@ -815,7 +677,6 @@ function removeDevice(u){if(!confirm('فك ربط الجهاز؟'))return;db.ref
 function updateAttDateLabel(){const d=new Date(currentAttDate);const label=document.getElementById('attDateLabel');if(label)label.textContent=`${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()} - ${DAY_NAMES[(d.getDay()+1)%7]}`;}
 function navAttDate(dir){const d=new Date(currentAttDate);d.setDate(d.getDate()+dir);currentAttDate=d.toISOString().split('T')[0];updateAttDateLabel();renderAttTable();}
 function goToday(){currentAttDate=TODAY;updateAttDateLabel();renderAttTable();}
-
 function renderAttTable(){const date=currentAttDate,tb=document.getElementById('attBody');if(!tb)return;tb.innerHTML='';const isAdmin=ME&&ME.role==='admin';Object.keys(allUsers).forEach(u=>{if(ADMINS.includes(u))return;const user=allUsers[u]||{},att=user.attendance&&user.attendance[date]?user.attendance[date]:null;const isOff=att&&att._offline;const srcBadge=isOff?'<span class="badge badge-off" style="font-size:0.65rem;">أوفلاين</span>':'<span class="badge badge-ok" style="font-size:0.65rem;">أونلاين</span>';tb.innerHTML+=`<tr><td>${user.realName||u}</td><td><span class="badge ${att&&att.status==='Present'?'badge-ok':'badge-no'}">${att?att.status:'Absent'}</span></td><td>${att?(att.clockIn||'--'):'--'}</td><td>${att?(att.clockOut||'--'):'--'}</td><td>${att?srcBadge:'--'}</td><td>${isAdmin?`<button class="edit-btn" onclick="openCorr('${u}','${date}')"><i class="fa-solid fa-pen"></i></button>`:'--'}</td></tr>`;});}
 
 function weekKey(dateStr){const d=new Date(dateStr);d.setDate(d.getDate()-((d.getDay()+1)%7));return d.toISOString().split('T')[0];}
@@ -845,10 +706,7 @@ function xlDetailed(){const rows=[];Object.keys(allUsers).forEach(u=>{if(ADMINS.
 function xlAbsences(){const rows=[];Object.keys(allUsers).forEach(u=>{if(ADMINS.includes(u))return;const a=allUsers[u].attendance||{};Object.keys(a).forEach(d=>{const v=a[d];if(v.status!=='Present')rows.push({'الموظف':allUsers[u].realName||u,'التاريخ':d,'الحالة':v.status});});});const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'غياب');XLSX.writeFile(wb,`غياب_${TODAY}.xlsx`);toast('تم التصدير','success');}
 function xlArchive(){toast('تم أرشفة البيانات','success');}
 
-function initListeners(){
-    db.ref('users').on('value',snap=>{allUsers=snap.val()||{};firebaseReady=true;if(ME&&allUsers[ME.username]){const ud=allUsers[ME.username];ME={username:ME.username,...ud};ME.role=ADMINS.includes(ME.username)?'admin':'employee';if(ud.approvedDevice===DEV_ID&&!document.getElementById('screenBind').classList.contains('hidden')){enterDashboard();}}renderAttTable();renderShiftsTable();renderWeekCalendar();renderEmpSchedule();if(ME&&ME.role==='admin')renderDevicesTable();});
-    db.ref('schedules').on('value',snap=>{allSched=snap.val()||{};renderShiftsTable();renderEmpSchedule();});
-}
+function initListeners(){db.ref('users').on('value',snap=>{allUsers=snap.val()||{};firebaseReady=true;if(ME&&allUsers[ME.username]){const ud=allUsers[ME.username];ME={username:ME.username,...ud};ME.role=ADMINS.includes(ME.username)?'admin':'employee';if(ud.approvedDevice===DEV_ID&&!document.getElementById('screenBind').classList.contains('hidden')){enterDashboard();}}renderAttTable();renderShiftsTable();renderWeekCalendar();renderEmpSchedule();if(ME&&ME.role==='admin')renderDevicesTable();});db.ref('schedules').on('value',snap=>{allSched=snap.val()||{};renderShiftsTable();renderEmpSchedule();});}
 
 initListeners();updateNetUI();
 if(navigator.onLine)setTimeout(syncOfflinePunches,2000);
