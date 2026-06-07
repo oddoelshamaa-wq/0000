@@ -714,24 +714,44 @@ function stopMainScanner(){
 }
 
 // ===== دالة معالجة الكود المعدلة لمنع خطأ "الكود غلط" =====
+// ===== دالة معالجة الكود المعدلة لمنع خطأ "الكود غلط" =====
 async function processScannedQR(text){
     if(!ME) return toast('سجل دخولك أولاً', 'error');
     
-    // تنظيف الكود من أي نصوص زيادة ممكن الكاميرا تقرأها
+    // تنظيف الكود من أي نصوص زيادة ممكن الكاميرا تقرأها من الشاشة
     const adminCodePrefix = 'SHAMAA_ADMIN|';
     const startIndex = text.indexOf(adminCodePrefix);
     
+    // لو الكود مش موجود أصلاً في النص اللي الموبايل قرأه
     if (startIndex === -1) {
-        toast('كود غير صحيح، امسح كود المدير فقط', 'error');
+        // أحياناً الكاميرا بتقرأ الحروف غلط، فبنشوف لو فيها حاجة قريبة
+        const possibleTypo = text.indexOf('SHAMAA_ADM');
+        if (possibleTypo !== -1) {
+            toast('الكود مش واضح، قرّب الكاميرا أكتر من الـ QR بس', 'warn');
+        } else {
+            toast('كود غير صحيح، امسح كود المدير فقط', 'error');
+        }
         return;
     }
     
-    const cleanText = text.substring(startIndex);
+    // استخراج الكود الصحيح فقط وبعدين نقص أي حاجة زيادة
+    let cleanText = text.substring(startIndex);
+    
+    // الكود الصحيح بتاعنا بيكون شكله (SHAMAA_ADMIN|username)
+    // فبنشوف أول مسافة أو سطر جديد بعد الكود وبنقصه
+    const spaceIndex = cleanText.search(/[\s\n\r]/);
+    if (spaceIndex !== -1 && spaceIndex < 30) { // 30 حرف هو أكبر حجم متوقع للكود
+        cleanText = cleanText.substring(0, spaceIndex);
+    }
+    
+    // تقسيم الكود للحصول على اسم المدير
     const p = cleanText.split('|');
     if(p.length < 2) {
         toast('الكود ناقص، حاول تقريب الكاميرا أكثر', 'error');
         return;
     }
+    
+    const adminUser = p[1]; 
     
     const now = new Date();
     const time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
