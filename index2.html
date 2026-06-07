@@ -602,6 +602,16 @@ table{min-width:500px}
 </div>
 
 <script>
+    // دالة لتوليد كود "مُزامن" يعتمد على الوقت فقط (يعمل أوفلاين)
+function getSyncCode(offset = 0) {
+    const timeStep = Math.floor(Date.now() / 15000) + offset; // يتغير كل 15 ثانية
+    const secretSeed = 8821; // رقم سري ثابت لضمان عدم التخمين
+    const dateFactor = new Date().getDate(); // يغير النمط يومياً
+    
+    // معادلة رياضية لتوليد 6 أرقام
+    let code = (timeStep * secretSeed * dateFactor) % 1000000;
+    return code.toString().padStart(6, '0'); 
+}
 /* ===== Firebase ===== */
 const FB_CFG={apiKey:"AIzaSyBojsAZ73wpf-4cD8TviULncyxIIOUO2qY",authDomain:"brak-nagaf.firebaseapp.com",projectId:"brak-nagaf",storageBucket:"brak-nagaf.firebasestorage.app",messagingSenderId:"149166416863",appId:"1:149166416863:web:e94fe392f868da07bbda6a",databaseURL:"https://brak-nagaf-default-rtdb.firebaseio.com/"};
 firebase.initializeApp(FB_CFG);
@@ -789,25 +799,17 @@ function generateEmpQR(containerId,username,realName){
 }
 
 // دالة لتوليد كود رقمي عشوائي للمدير
-// دالة لتوليد كود رقمي عشوائي للمدير
 function generateAdminCode() {
     const display = document.getElementById('adminDisplayCode');
     if (!display) return;
 
-    // توليد 6 أرقام عشوائية
-    const newCode = Math.floor(100000 + Math.random() * 900000).toString();
-    
-    // عرض الرقم في المربع اللي في الصورة
+    // توليد الكود بناءً على الوقت الحالي (بدون الحاجة لإنترنت)
+    const newCode = getSyncCode(0);
     display.textContent = newCode;
 
-    // حفظ الكود في Firebase عشان الموظف يقدر يقارن بيه
-    if (navigator.onLine) {
-        db.ref('current_session_code').set(newCode);
-    }
-
-    qrSecondsLeft = 15; // إعادة ضبط العداد
+    // تحديث العداد التنازلي
+    qrSecondsLeft = 15;
 }
-
 // دالة تشغيل التايمر (العداد التنازلي)
 function startAdminCodeTimer() {
     generateAdminCode(); // توليد أول كود فوراً
@@ -1342,50 +1344,46 @@ function initEmpDialer() {
 }
 
 // 2. الموظف "يتصل" (يولد QR)
-async function makeEmployeeCall() {
-    // التأكد أن الموظف كتب 6 أرقام
+function makeEmployeeCall() {
     if (empInputCode.length < 6) {
-        toast("يرجى إدخال الكود المكون من 6 أرقام الظاهر عند المدير", "warn");
+        toast("أدخل الكود المكون من 6 أرقام الموضح عند المدير", "warn");
         return;
     }
 
-    if (!isOnline) {
-        toast("يجب أن تكون متصلاً بالإنترنت لاستخدام ميزة الاتصال الرقمي", "error");
-        return;
-    }
+    // توليد الأكواد الصحيحة في اللحظة الحالية على جهاز الموظف
+    const correctCodeNow = getSyncCode(0);
+    const correctCodeBefore = getSyncCode(-1); // سماح بـ 15 ثانية تأخير
 
-    toast("جاري التحقق من الكود...", "info");
+    // مقارنة الكود اللي الموظف كتبه بالأكواد المتوقعة
+    if (empInputCode === correctCodeNow || empInputCode === correctCodeBefore) {
+        const now = new Date();
+        const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        const today = TODAY_STR();
 
-    // جلب الكود الصحيح من قاعدة البيانات
-    db.ref('current_session_code').once('value').then((snapshot) => {
-        const correctCode = snapshot.val();
+        // معرفة هل هي بصمة دخول أم خروج بناءً على البيانات المحلية
+        let la = getLocalAttendance(ME.username);
+        let cd = la[today] || {};
 
-        if (empInputCode === correctCode) {
-            // الكود صحيح! سجل البصمة
-            const now = new Date();
-            const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-            const today = TODAY_STR();
-
-            // التحقق هل سجل دخول أم خروج
-            db.ref(`users/${ME.username}/attendance/${today}`).once('value').then((attSnap) => {
-                const data = attSnap.val() || {};
-                
-                if (!data.clockIn) {
-                    // تسجيل دخول
-                    processDigitalPunch('in', time, today);
-                } else if (!data.clockOut) {
-                    // تسجيل خروج
-                    processDigitalPunch('out', time, today);
-                } else {
-                    toast("أنت مسجل حضور وانصراف بالفعل اليوم", "warn");
-                }
-            });
-
+        if (!cd.clockIn) {
+            // تسجيل حضور أوفلاين
+            savePunchOffline('in', time);
+            if(navigator.vibrate) navigator.vibrate(100);
+        } else if (!cd.clockOut) {
+            // تسجيل انصراف أوفلاين
+            savePunchOffline('out', time);
+            if(navigator.vibrate) navigator.vibrate(100);
         } else {
-            toast("الكود غير صحيح أو منتهي الصلاحية", "error");
-            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            toast("أنت مسجل حضور وانصراف بالفعل اليوم", "warn");
         }
-    });
+
+        // تصفير الشاشة بعد النجاح
+        empInputCode = "";
+        document.getElementById('empDialDisplay').textContent = "---";
+        
+    } else {
+        toast("الكود غير صحيح! تأكد من الرقم عند المدير", "error");
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    }
 }
 
 // دالة تنفيذ البصمة بعد نجاح الكود
