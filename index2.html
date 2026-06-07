@@ -1245,17 +1245,19 @@ window.addEventListener('load', () => {
     checkPersistentLogin();
 });
 // 1. وظيفة الموظف: توليد الكود وهو أوفلاين
+// --- الكود الموحد والمصحح ---
+
+// 1. وظيفة الموظف (توليد كود الحضور)
 function showMyOfflineBadge() {
-    if(!ME) return;
+    if(!ME) { toast("سجل دخولك أولاً", "error"); return; }
     const now = new Date();
     const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
     
-    // كود يحتوي على اسم الموظف والوقت الحالي
+    // كود يحتوي على: علامة النظام | اسم المستخدم | وقت البصمة | تاريخ اللحظة (بالملي ثانية)
     const qrData = `SHAMAA_BADGE|${ME.username}|${time}|${Date.now()}`;
     
-    // استخدام المودال الموجود في ملفك أصلاً لعرض الكود
     const container = document.getElementById('empQrModal');
-    container.innerHTML = ''; // مسح القديم
+    container.innerHTML = ''; // مسح أي كود قديم
     new QRCode(container, {
         text: qrData,
         width: 220,
@@ -1265,28 +1267,39 @@ function showMyOfflineBadge() {
     });
     
     document.getElementById('eqmName').textContent = "امسح الكود عند المدير";
-    document.getElementById('eqmUser').textContent = "سجل دخولك الآن";
+    document.getElementById('eqmUser').textContent = "سجل حضورك الآن";
     document.getElementById('empQrModalOverlay').classList.add('open');
 }
 
-// 2. وظيفة المدير: فتح الكاميرا واستقبال الأكواد
+// 2. وظيفة المدير (فتح الكاميرا واستقبال البصمات)
 let stationScanner = null;
 function toggleStationMode() {
-    // هنستخدم حاوية الكاميرا اللي موجودة في ملفك (reader)
-    const reader = document.getElementById('reader'); 
+    const reader = document.getElementById('reader');
     const scanSection = document.getElementById('scanSection');
     
-    // إظهار منطقة الكاميرا في شاشة المدير
-    scanSection.classList.remove('hidden');
-    reader.classList.remove('hidden');
-    
     if (!stationScanner) {
+        // إظهار منطقة الكاميرا
+        scanSection.classList.remove('hidden');
+        reader.classList.remove('hidden');
+        
         stationScanner = new Html5Qrcode("reader");
-        stationScanner.start({ facingMode: "environment" }, { fps: 15, qrbox: 250 }, (text) => {
+        
+        // ضبط الكاميرا: "user" للكمبيوتر (الويب كام) و "environment" للموبايل (الكاميرا الخلفية)
+        const config = { fps: 20, qrbox: 250 };
+        
+        // نحاول نفتح كاميرا الكمبيوتر (user) أولاً
+        stationScanner.start({ facingMode: "user" }, config, (text) => {
             handleIncomingBadge(text);
-        }).catch(err => toast("فشل فتح الكاميرا", "error"));
+        }).catch(err => {
+            // لو فشل (مثلاً لو شغال من موبايل)، يفتح الكاميرا الخلفية
+            stationScanner.start({ facingMode: "environment" }, config, (text) => {
+                handleIncomingBadge(text);
+            });
+        });
+        
         toast("المحطة جاهزة لاستقبال الموظفين", "success");
     } else {
+        // إغلاق الكاميرا
         stationScanner.stop().then(() => {
             stationScanner = null;
             reader.classList.add('hidden');
@@ -1295,36 +1308,41 @@ function toggleStationMode() {
     }
 }
 
-// 3. معالجة البيانات الممسوحة (عند المدير)
+// 3. وظيفة معالجة البصمة (موجودة مرة واحدة فقط)
 function handleIncomingBadge(text) {
     const p = text.split('|');
+    
+    // التأكد إن الكود يخص نظام الشماع
     if (p[0] === "SHAMAA_BADGE") {
         const user = p[1];
         const punchTime = p[2];
         const timestamp = parseInt(p[3]);
 
-        // التحقق إن الكود لسه جديد (منع التلاعب بصور الشاشة)
-        if (Date.now() - timestamp > 120000) { // صلاحية الكود دقيقتين
-            toast("الكود منتهي الصلاحية! اطلب منه تحديثه", "error");
+        // منع الغش: الكود لازم يكون تم توليده في آخر دقيقتين فقط
+        if (Date.now() - timestamp > 120000) {
+            toast("الكود منتهي الصلاحية! اطلب من الموظف تحديث الكود", "error");
             return;
         }
 
         const today = TODAY_STR();
-        // موبايل المدير هو اللي بيرفع للداتابيز لأن معاه نت
+        
+        // التسجيل في الداتابيز (بيتم من جهاز المدير اللي فيه إنترنت)
         db.ref(`users/${user}/attendance/${today}`).update({
             clockIn: punchTime,
             status: 'Present',
             date: today,
-            method: 'StationMode'
+            via: 'Manager_Station_PC' // توثيق إن البصمة تمت عند المدير
         }).then(() => {
-            // تنبيه صوتي بسيط للنجاح
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-            audio.play().catch(() => {});
+            // صوت "تيت" للنجاح
+            const beep = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+            beep.play().catch(() => {}); // تجاوز حماية المتصفح للصوت
             
-            toast(`تم بصمة: ${user} بنجاح`, "success");
+            toast(`تم تسجيل بصمة الموظف: ${user}`, "success");
             
-            // اهتزاز خفيف للموبايل
-            if (navigator.vibrate) navigator.vibrate(100);
+            // اهتزاز خفيف لو المدير شغال من موبايل
+            if (navigator.vibrate) navigator.vibrate(150);
+        }).catch(err => {
+            toast("خطأ في الاتصال بالسيرفر", "error");
         });
     }
 }
