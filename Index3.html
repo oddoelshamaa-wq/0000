@@ -395,6 +395,12 @@ table{min-width:500px}
     <button class="btn btn-success btn-full btn-lg" onclick="toggleStationMode()" style="height: 80px; border-radius: 15px;">
         <i class="fa-solid fa-tower-broadcast" style="margin-left: 10px;"></i> فتح محطة استقبال البصمات
     </button>
+    <div id="adminStationBox" class="hidden" style="margin-bottom: 20px; border: 4px solid var(--success); border-radius: 20px; overflow: hidden; background: #000;">
+    <div id="stationReader" style="width: 100%; min-height: 300px;"></div>
+    <div style="padding: 10px; text-align: center; color: #fff; background: rgba(0,0,0,0.5);">
+        <i class="fa-solid fa-sync fa-spin"></i> جاري المسح المستمر...
+    </div>
+</div>
 </div>
             <div class="admin-qr-box">
                 <div style="font-weight:700;margin-bottom:12px;color:var(--accent);"><i class="fa-solid fa-shield-halved"></i> كود QR للبصمة (يتغير كل 15 ثانية)</div>
@@ -1279,89 +1285,89 @@ enterDashboard = function() {
     renderStaticBadge();
 };
 
-// 2. وظيفة المدير: المسح المستمر والسريع جداً
+
+
 let stationScanner = null;
-let lastScannedUser = "";
-let lastScanTime = 0;
 
 function toggleStationMode() {
-    const reader = document.getElementById('reader');
-    const scanSection = document.getElementById('scanSection');
+    const box = document.getElementById('adminStationBox');
     
-    if (!stationScanner) {
-        scanSection.classList.remove('hidden');
-        reader.classList.remove('hidden');
-        stationScanner = new Html5Qrcode("reader");
-        
-        stationScanner.start(
-            { facingMode: "user" }, 
-            { fps: 25, qrbox: 300 }, // سرعة عالية جداً
-            (text) => {
-                handleContinuousScan(text);
-            }
-        );
-        toast("محطة الاستقبال جاهزة.. المسح مستمر", "success");
-    } else {
+    // إذا كان الاسكانر شغال، نقفله
+    if (stationScanner) {
         stationScanner.stop().then(() => {
             stationScanner = null;
-            reader.classList.add('hidden');
-        });
+            box.classList.add('hidden');
+            toast("تم إغلاق المحطة", "info");
+        }).catch(err => console.error(err));
+        return;
     }
+
+    // إذا كان مقفول، نفتحه
+    box.classList.remove('hidden');
+    stationScanner = new Html5Qrcode("stationReader");
+    
+    const config = { 
+        fps: 20,           // سرعة المسح
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0   // شكل مربع
+    };
+
+    // فتح الكاميرا الخلفية (environment)
+    stationScanner.start(
+        { facingMode: "environment" }, 
+        config,
+        (text) => {
+            // الدالة اللي بتعالج الكود لما يتمسح
+            handleContinuousScan(text);
+        }
+    ).catch(err => {
+        console.error(err);
+        box.classList.add('hidden');
+        stationScanner = null;
+        toast("فشل فتح الكاميرا: تأكد من إعطاء الصلاحية", "error");
+    });
 }
 function handleContinuousScan(text) {
     const now = Date.now();
-    // منع التكرار السريع لنفس الكود
+    // منع تكرار مسح نفس الكود في أقل من 5 ثواني
     if (text === lastScannedUser && now - lastScanTime < 5000) return;
 
-    const p = text.split('|');
-    
-    // التحقق من أن الكود هو كود بصمة "بصمة أوفلاين"
-    if (p[0] === "SHAMAA_PUNCH") {
-        const username = p[1];
-        const empTime = p[2];      // الوقت اللي كان على موبايل الموظف (HH:mm)
-        const empTimestamp = p[3]; // التوقيت الدقيق بالملي ثانية
-        const empRealName = p[4];
+    // دعم الكود القديم والجديد (بصمة أوفلاين)
+    if (text.startsWith("SHAMAA_ID") || text.startsWith("SHAMAA_PUNCH")) {
+        const p = text.split('|');
+        const user = p[1];
+        const timeInQR = p[2] || "--:--"; // الوقت اللي جاي من موبايل الموظف
+        const name = p[p.length - 1]; // الاسم بيبقى آخر عنصر
 
         lastScannedUser = text;
         lastScanTime = now;
 
         const today = TODAY_STR();
+        const finalTime = (p[0] === "SHAMAA_PUNCH") ? timeInQR : new Date().toLocaleTimeString('en-GB', {hour: '2-digit', minute:'2-digit'});
 
-        // المدير يرفع البيانات مستخدماً "توقيت الموظف" الموجود داخل الكود
-        db.ref(`users/${username}/attendance/${today}`).once('value').then(snap => {
+        db.ref(`users/${user}/attendance/${today}`).once('value').then(snap => {
             const data = snap.val();
-            let upd = { 
-                date: today, 
-                status: 'Present',
-                lastUpdateSource: 'Manager_Scan'
-            };
-            
-            let punchType = "";
+            let upd = { date: today, status: 'Present' };
+            let type = "";
 
             if (!data || !data.clockIn) {
-                upd.clockIn = empTime; // استخدام وقت الموظف
-                punchType = "دخول";
+                upd.clockIn = finalTime;
+                type = "دخول";
             } else if (!data.clockOut) {
-                // إذا كان الموظف مسجل دخول، نسجل له خروج بنفس التوقيت في الكود
-                upd.clockOut = empTime; 
-                punchType = "خروج";
+                upd.clockOut = finalTime;
+                type = "خروج";
             } else {
-                toast(`الموظف ${empRealName} مسجل بالفعل اليوم`, "warn");
+                toast(`الموظف ${name} مسجل حضور وانصراف بالفعل`, "warn");
                 return;
             }
 
-            // تحديث قاعدة البيانات
-            db.ref(`users/${username}/attendance/${today}`).update(upd).then(() => {
-                // تنبيه صوتي للمدير بنجاح العملية
-                new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3').play();
-                toast(`تم تسجيل ${punchType} لـ ${empRealName} بتوقيت: ${empTime}`, "success");
-                
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+            db.ref(`users/${user}/attendance/${today}`).update(upd).then(() => {
+                // صوت تأكيد
+                try { new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3').play(); } catch(e){}
+                toast(`تم تسجيل ${type}: ${name} (${finalTime})`, "success");
+                if (navigator.vibrate) navigator.vibrate(200);
             });
         });
-    } else {
-        // إذا قام المدير بمسح كود قديم أو غير متوافق
-        toast("كود غير معتمد أو قديم", "error");
     }
 }
 // وظيفة الموظف: توليد كود يحتوي على توقيته الحالي (يعمل بدون إنترنت)
