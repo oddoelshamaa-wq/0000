@@ -8471,15 +8471,131 @@ const PHONE_COLORS_DB = {
 };
 
 // 2. دالة معرفة نوع الجهاز
-function detectPhoneModel() {
-    const ua = navigator.userAgent;
-    if (/iPhone/i.test(ua)) return "آيفون";
-    if (/Samsung/i.test(ua)) return "سامسونج";
-    if (/Redmi|Xiaomi/i.test(ua)) return "شاومي/ريدمي";
-    if (/Windows/i.test(ua)) return "كمبيوتر (ويندوز)";
-    return "جهاز غير معروف";
+function detectPhoneModel(){
+    const ua=navigator.userAgent;let model='جهاز غير معروف';
+    if(/iPhone/i.test(ua)){
+        if(/iPhone16,2/i.test(ua))model='iPhone 15 Pro Max';
+        else if(/iPhone16,1/i.test(ua))model='iPhone 15 Pro';
+        else if(/iPhone16,3/i.test(ua)||/iPhone16,4/i.test(ua))model='iPhone 15 Plus';
+        else if(/iPhone14,7/i.test(ua)||/iPhone14,8/i.test(ua))model='iPhone 15';
+        else if(/iPhone15,4/i.test(ua)||/iPhone15,5/i.test(ua))model='iPhone 15 Pro';
+        else if(/iPhone14,3/i.test(ua))model='iPhone 14 Pro';
+        else if(/iPhone14,4/i.test(ua))model='iPhone 14 Pro Max';
+        else if(/iPhone14,5/i.test(ua))model='iPhone 14';
+        else if(/iPhone14,6/i.test(ua))model='iPhone 14 Plus';
+        else if(/iPhone13,1/i.test(ua))model='iPhone 13 Mini';
+        else if(/iPhone13,2/i.test(ua))model='iPhone 13';
+        else if(/iPhone13,3/i.test(ua))model='iPhone 13 Pro';
+        else if(/iPhone13,4/i.test(ua))model='iPhone 13 Pro Max';
+        else if(/iPhone12,1/i.test(ua))model='iPhone 12 Mini';
+        else if(/iPhone12,3/i.test(ua))model='iPhone 12';
+        else if(/iPhone12,5/i.test(ua))model='iPhone 12 Pro';
+        else if(/iPhone12,8/i.test(ua))model='iPhone SE 3';
+        else model='آيفون';
+    }
+    else if(/iPad/i.test(ua)){
+        if(/iPad13,8/i.test(ua)||/iPad13,9/i.test(ua)||/iPad13,10/i.test(ua)||/iPad13,11/i.test(ua))model='iPad Pro M2';
+        else if(/iPad13,4/i.test(ua)||/iPad13,5/i.test(ua)||/iPad13,6/i.test(ua)||/iPad13,7/i.test(ua))model='iPad Pro M1';
+        else if(/iPad14,1/i.test(ua)||/iPad14,2/i.test(ua))model='iPad Air M1';
+        else if(/iPad11,1/i.test(ua)||/iPad11,2/i.test(ua))model='iPad mini 6';
+        else model='آيباد';
+    }
+    else if(/Samsung/i.test(ua)){
+        if(/SM-S928B/i.test(ua))model='Samsung Galaxy S24 Ultra';
+        else if(/SM-S926B/i.test(ua))model='Samsung Galaxy S24+';
+        else if(/SM-S921B/i.test(ua))model='Samsung Galaxy S24';
+        else if(/SM-S918B/i.test(ua))model='Samsung Galaxy S23 Ultra';
+        else if(/SM-S916B/i.test(ua))model='Samsung Galaxy S23+';
+        else if(/SM-S911B/i.test(ua))model='Samsung Galaxy S23';
+        else if(/SM-S908B/i.test(ua))model='Samsung Galaxy S22 Ultra';
+        else if(/SM-S906B/i.test(ua))model='Samsung Galaxy S22+';
+        else if(/SM-S901B/i.test(ua))model='Samsung Galaxy S22';
+        else if(/SM-G998B/i.test(ua))model='Samsung Galaxy S21 Ultra';
+        else if(/SM-G996B/i.test(ua))model='Samsung Galaxy S21+';
+        else if(/SM-G991B/i.test(ua))model='Samsung Galaxy S21';
+        else if(/SM-N986B/i.test(ua))model='Samsung Galaxy Note 20 Ultra';
+        else if(/SM-N985F/i.test(ua))model='Samsung Galaxy Note 20';
+        else if(/SM-F946B/i.test(ua))model='Samsung Galaxy Z Fold5';
+        else if(/SM-F731B/i.test(ua))model='Samsung Galaxy Z Flip5';
+        else if(/SM-F936B/i.test(ua))model='Samsung Galaxy Z Fold4';
+        else if(/SM-F721B/i.test(ua))model='Samsung Galaxy Z Flip4';
+        else if(/SM-A546B/i.test(ua)||/SM-A536B/i.test(ua))model='Samsung Galaxy A54';
+        else if(/SM-A346B/i.test(ua))model='Samsung Galaxy A34';
+        else if(/SM-A245F/i.test(ua))model='Samsung Galaxy A24';
+        else if(/SM-A146P/i.test(ua)||/SM-A145F/i.test(ua)||/SM-A145B/i.test(ua))model='Samsung Galaxy A15';
+        else if(/SM-A146B/i.test(ua))model='Samsung Galaxy A14';
+        else if(/SM-A056F/i.test(ua))model='Samsung Galaxy A05';
+        else if(/SM-A045F/i.test(ua))model='Samsung Galaxy A04';
+        else if(/SM-A035F/i.test(ua))model='Samsung Galaxy A03';
+        else model='سامسونج';
+    }
+    else if(/Xiaomi|Redmi|POCO/i.test(ua)){
+        if(/POCO/i.test(ua)){
+            if(/23054PC19G/i.test(ua))model='POCO X5 Pro';
+            else if(/23106PC76G/i.test(ua))model='POCO M6 Pro';
+            else if(/23049PCD8G/i.test(ua))model='POCO F5';
+            else if(/23106PC95G/i.test(ua))model='POCO C65';
+            else model='POCO';
+        }
+        else if(/Redmi Note 13/i.test(ua)||/2304FPN6DC/i.test(ua)||/23106RN0DA/i.test(ua))model='Redmi Note 13';
+        else if(/Redmi Note 12/i.test(ua)||/23021RAAEG/i.test(ua))model='Redmi Note 12';
+        else if(/Redmi Note 11/i.test(ua)||/21091116GI/i.test(ua))model='Redmi Note 11';
+        else if(/Redmi Note 10/i.test(ua))model='Redmi Note 10';
+        else if(/Redmi 13/i.test(ua))model='Redmi 13C';
+        else if(/Redmi 12/i.test(ua))model='Redmi 12';
+        else if(/Redmi A/i.test(ua))model='Redmi A2';
+        else model='شاومي';
+    }
+    else if(/Huawei|HUAWEI/i.test(ua)){
+        if(/MNA-AL00/i.test(ua))model='Huawei P60 Pro';
+        else if(/JAD-AL00/i.test(ua))model='Huawei P50 Pro';
+        else if(/Nova 12/i.test(ua))model='Huawei Nova 12';
+        else if(/Nova 11/i.test(ua))model='Huawei Nova 11';
+        else if(/Y91/i.test(ua))model='Huawei Y91';
+        else if(/Y72/i.test(ua))model='Huawei Y72';
+        else model='هواوي';
+    }
+    else if(/OPPO/i.test(ua)){
+        if(/CPH2449/i.test(ua))model='OPPO Find X7 Ultra';
+        else if(/CPH2481/i.test(ua))model='OPPO Reno 11 Pro';
+        else if(/CPH2485/i.test(ua))model='OPPO Reno 11';
+        else if(/CPH2463/i.test(ua))model='OPPO A78';
+        else if(/CPH2469/i.test(ua))model='OPPO A58';
+        else if(/CPH2441/i.test(ua))model='OPPO A57';
+        else if(/CPH2401/i.test(ua))model='OPPO A17';
+        else if(/CPH2381/i.test(ua))model='OPPO A16';
+        else if(/CPH2185/i.test(ua))model='OPPO A15';
+        else model='أوبو';
+    }
+    else if(/Realme/i.test(ua)){
+        if(/RMX3820/i.test(ua))model='Realme 12 Pro';
+        else if(/RMX3841/i.test(ua))model='Realme 11 Pro';
+        else if(/RMX3810/i.test(ua))model='Realme C67';
+        else if(/RMX3760/i.test(ua))model='Realme C55';
+        else if(/RMX3761/i.test(ua))model='Realme C53';
+        else if(/RMX3630/i.test(ua))model='Realme C33';
+        else model='ريلمي';
+    }
+    else if(/Honor/i.test(ua)){
+        if(/REA-AN00/i.test(ua))model='Honor 90';
+        else if(/VNE-AN00/i.test(ua))model='Honor X9b';
+        else if(/TFY-AN00/i.test(ua))model='Honor X7b';
+        else if(/KSA-AN00/i.test(ua))model='Honor X6a';
+        else model='هونر';
+    }
+    else if(/Nothing/i.test(ua)){
+        if(/A065/i.test(ua))model='Nothing Phone (2)';
+        else if(/A142/i.test(ua))model='Nothing Phone (2a)';
+        else model='ناثينج';
+    }
+    else if(/Nokia/i.test(ua))model='نوكيا';
+    else if(/Tecno/i.test(ua))model='تكنو';
+    else if(/Infinix/i.test(ua))model='إنفينيكس';
+    else if(/Windows/i.test(ua))model='كمبيوتر (ويندوز)';
+    else if(/Macintosh/i.test(ua))model='كمبيوتر (ماك)';
+    else if(/Linux/i.test(ua)&&!/Android/i.test(ua))model='كمبيوتر (لينكس)';
+    return model;
 }
-
 // 3. الدالة اللي كان طالع فيها الخطأ (getDeviceInfo)
 function getDeviceInfo() {
     const model = detectPhoneModel();
