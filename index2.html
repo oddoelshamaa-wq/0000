@@ -8461,6 +8461,35 @@ window.handleEm = handleEm;
 window.handleMeeting = handleMeeting;
 window.handleOt = handleOt;
 window.handlePerm = handlePerm;
+// 1. قاعدة بيانات الألوان والموديلات
+const PHONE_COLORS_DB = {
+    'iPhone 15 Pro Max': '#8B4513', 'iPhone 15 Pro': '#4A4A4A',
+    'iPhone 14 Pro Max': '#2F2F2F', 'Samsung Galaxy S24 Ultra': '#708090',
+    'Redmi Note 13': '#4169E1', 'OPPO A78': '#1D8348',
+    'آيفون': '#1D1D1F', 'سامسونج': '#2F4F4F', 'كمبيوتر (ويندوز)': '#0078D4',
+    'جهاز غير معروف': '#4A5568'
+};
+
+// 2. دالة معرفة نوع الجهاز
+function detectPhoneModel() {
+    const ua = navigator.userAgent;
+    if (/iPhone/i.test(ua)) return "آيفون";
+    if (/Samsung/i.test(ua)) return "سامسونج";
+    if (/Redmi|Xiaomi/i.test(ua)) return "شاومي/ريدمي";
+    if (/Windows/i.test(ua)) return "كمبيوتر (ويندوز)";
+    return "جهاز غير معروف";
+}
+
+// 3. الدالة اللي كان طالع فيها الخطأ (getDeviceInfo)
+function getDeviceInfo() {
+    const model = detectPhoneModel();
+    const colorHex = PHONE_COLORS_DB[model] || '#4A5568';
+    return { 
+        model: model, 
+        colorHex: colorHex, 
+        full: model + " - " + colorHex 
+    };
+}
         </script>
         <!-- نافذة تأكيد إتمام الصلاة -->
         <div id="prayerCheckModal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:30000; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(10px);">
