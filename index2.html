@@ -7869,77 +7869,35 @@ window.saveUser = function() {
         if (currentVal) sel.value = currentVal; // إعادة الاختيار لو كان موجوداً
     }
     // دالة الضغط على البصمة
-    async function handleAttendanceClick() {
-        if (!currentUser) return;
-        const btn = document.getElementById('attendanceBtn');
-        const statusText = document.getElementById('attStatusText');
-        if (btn.classList.contains('btn-disabled')) return;
+  async function handleAttendanceClick() {
+    // ... الكود القديم الخاص بك (التحقق من اللوكيشن) ...
 
-        // 1. جلب موقع المكتب من الداتابيز أولاً
-        const officeSnap = await db.ref('settings/officeLocation').once('value');
-        const officeLoc = officeSnap.val();
+    const deviceInfo = getDeviceInfo(); // جلب نوع التلفون واللون التقديري
+    const todayKey = getServerDateKey(); 
+    const nowTime = getServerTimeString();
 
-        if (!officeLoc) {
-            alert("⚠️ الإدارة لم تقم بتحديد موقع المكتب بعد. تواصل مع المشرف.");
-            return;
+    db.ref(`users/${currentUser.username}/attendance/${todayKey}`).once('value', (snap) => {
+        const data = snap.val();
+        let updateData = { 
+            date: todayKey,
+            status: "Present"
+        };
+        
+        if (!data || !data.clockIn) {
+            // عند الدخول سجل الجهاز
+            updateData.clockIn = nowTime;
+            updateData.deviceIn = deviceInfo.model + " - " + deviceInfo.colorHex; 
+            alert("✅ تم تسجيل حضورك من: " + deviceInfo.model);
+        } else if (!data.clockOut) {
+            // عند الانصراف سجل الجهاز
+            updateData.clockOut = nowTime;
+            updateData.deviceOut = deviceInfo.model + " - " + deviceInfo.colorHex;
+            alert("🛑 تم تسجيل انصرافك");
         }
-
-        // 2. التحقق لو الموظف داخل من موبايل
-        if (getDeviceType() === "mobile") {
-            statusText.innerText = "⏳ جاري التحقق من موقعك...";
-            
-            try {
-                const position = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true });
-                });
-
-                const distance = calculateDistance(
-                    position.coords.latitude, 
-                    position.coords.longitude, 
-                    officeLoc.lat, 
-                    officeLoc.lon
-                );
-
-                const ALLOWED_RADIUS = 150; // مسموح له في دائرة قطرها 150 متر حول المكتب
-
-                if (distance > ALLOWED_RADIUS) {
-                    alert(`❌ عذراً! أنت بعيد عن المكتب بمقدار ${Math.round(distance)} متر. لا يمكنك البصمة من هنا.`);
-                    statusText.innerText = "خارج نطاق الشركة 🛑";
-                    return;
-                }
-            } catch (error) {
-                alert("❌ يجب تفعيل الـ GPS والسماح بالوصول للموقع للبصمة من الموبايل.");
-                statusText.innerText = "خطأ في تحديد الموقع ⚠️";
-                return;
-            }
-        }
-
-        // 3. إكمال عملية البصمة لو PC أو لو موبايل واللوكيشن صح
-        const todayKey = getServerDateKey(); 
-        const nowTime = getServerTimeString();
-
-        db.ref(`users/${currentUser.username}/attendance/${todayKey}`).once('value', (snap) => {
-            const data = snap.val();
-            let updateData = { 
-                date: todayKey,
-                clockIn: data && data.clockIn ? data.clockIn : nowTime,
-                status: "Present",
-                device: getDeviceType()
-            };
-            
-            if (!data || !data.clockIn) {
-                alert("✅ تم تسجيل حضورك: " + nowTime);
-            } else if (!data.clockOut) {
-                updateData.clockOut = nowTime;
-                alert("🛑 تم تسجيل انصرافك: " + nowTime);
-            } else {
-                alert("لقد سجلت بصمتك اليوم بالفعل.");
-                return;
-            }
-
-            db.ref(`users/${currentUser.username}/attendance/${todayKey}`).update(updateData);
-        });
-    }
+        
+        db.ref(`users/${currentUser.username}/attendance/${todayKey}`).update(updateData);
+    });
+}
 
     // دالة تحديث شكل البصمة أوتوماتيك
 function updateAttendanceUI() {
