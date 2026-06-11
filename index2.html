@@ -8599,7 +8599,21 @@ function detectPhoneModel(){
 // 3. الدالة اللي كان طالع فيها الخطأ (getDeviceInfo)
 function getDeviceInfo() {
     const model = detectPhoneModel();
-    const colorHex = PHONE_COLORS_DB[model] || '#4A5568';
+    let colorHex = "#4A5568"; // اللون الافتراضي (رمادي)
+
+    // تخصيص ألوان الماركات
+    if (model.includes("SM-") || model.toLowerCase().includes("samsung")) {
+        colorHex = "#034EA2"; // أزرق سامسونج
+    } else if (model.includes("M2") || model.toLowerCase().includes("xiaomi") || model.toLowerCase().includes("redmi")) {
+        colorHex = "#FF6900"; // برتقالي شاومي
+    } else if (model.toLowerCase().includes("oppo") || model.includes("CPH")) {
+        colorHex = "#118D57"; // أخضر أوبو
+    } else if (model.toLowerCase().includes("iphone")) {
+        colorHex = "#8B4513"; // تيتانيوم آيفون
+    } else if (model.includes("كمبيوتر")) {
+        colorHex = "#0078D4"; // أزرق ويندوز
+    }
+
     return { 
         model: model, 
         colorHex: colorHex, 
