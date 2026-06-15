@@ -385,6 +385,81 @@
 
 .tt-present { color: #10b981; } /* لون أخضر للحاضر */
 .tt-absent { color: #f43f5e; }  /* لون أحمر للغائب */
+/* تحسين شكل كرت "خارج تغيير الوردية" ليكون عريضاً كما في الصورة الأولى */
+.sc-extra {
+    grid-column: 1 / -1; /* يمتد على كامل العرض */
+    background: rgba(15, 23, 42, 0.3);
+    border: 1px solid rgba(236, 72, 153, 0.2);
+    border-radius: 24px;
+    padding: 30px !important;
+    transition: all 0.3s ease;
+}
+
+.sc-extra i {
+    color: #fff;
+    font-size: 2.2rem !important;
+    margin-bottom: 15px !important;
+}
+
+.sc-extra .sc-label {
+    color: #94a3b8;
+    font-size: 1rem !important;
+    margin-bottom: 10px !important;
+}
+
+.sc-extra .sc-value {
+    color: #fff;
+    font-size: 3rem !important; /* الرقم كبير كما في الصورة */
+    font-weight: 800;
+}
+
+.sc-extra .sc-sub {
+    color: #94a3b8;
+    font-size: 0.9rem !important;
+}
+
+.sc-extra .sc-sub span {
+    color: #0e6693 !important; /* اللون الوردي للكلمة المميزة */
+    font-weight: 700;
+}
+
+/* تنسيق التول تيب (النافذة المنبثقة) لتطابق الصورة الثانية */
+.scanner-tooltip {
+    width: 280px !important; /* أعرض قليلاً */
+    background: #0f172a !important;
+    border-left: 4px solid #0ea5e9 !important; /* الخط الأزرق الجانبي */
+    padding: 15px !important;
+    text-align: right !important;
+}
+
+.tt-title {
+    color: #0ea5e9 !important; /* عنوان التفاصيل بالأزرق */
+    font-size: 1.1rem !important;
+    margin-bottom: 15px !important;
+    border-bottom: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.tt-item {
+    display: flex;
+    flex-direction: row-reverse; /* الاسم يمين والتفاصيل يسار */
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px !important;
+    gap: 10px;
+}
+
+.tt-name {
+    color: #ec4899 !important; /* لون اسم الموظف وردي */
+    font-weight: 700;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.tt-info {
+    color: #ec4899 !important; /* لون التفاصيل وردي كما في الصورة */
+    font-size: 0.85rem;
+    direction: rtl;
+}
     </style>
     </head>
     <body>
@@ -512,7 +587,14 @@
         <div class="sc-sub">حاضر <span id="pres12">0</span> | غائب <span id="abs12" style="color:#f43f5e">0</span></div>
     </div>
 </div>
-
+<!-- كرت الحضور خارج المناوبة (تغيير الوردية) -->
+<div class="scanner-card sc-extra" id="cardExtra">
+    <i class="fa-solid fa-user-plus"></i>
+    <div class="sc-label">خارج تغيير الوردية</div>
+    <div class="sc-value" id="countShiftExtra">0</div>
+    <div class="sc-sub">موظفين حضروا <span style="color:#532e25">بدون جدول</span></div>
+    <div class="scanner-tooltip" id="tooltipExtra"></div>
+</div>
         <div class="scanner-footer">
             <div class="sc-status-card sc-present">
                 <div>
@@ -1663,10 +1745,9 @@ function updateQuickScanner() {
     const dayIdx = (d.getDay() + 1) % 7;
     const wk = weekKey(date);
     
-    // الحصول على الوقت الحالي بالساعات والدقائق
     const now = getServerTime();
     const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
-    const isToday = (date === TODAY_STR()); // هل نحن نعرض كشف اليوم؟
+    const isToday = (date === TODAY_STR());
 
     let shiftsData = {
         '7': { req: 0, pres: 0, names: [] },
@@ -1678,17 +1759,33 @@ function updateQuickScanner() {
 
     let totalRequired = 0;
     let totalPresent = 0;
+    let swapCount = 0; 
+    let swapNames = []; 
 
     Object.keys(allUsers).forEach(u => {
         if (ADMINS.includes(u)) return;
 
-        let sched = (allSched[u] && allSched[u][wk] && allSched[u][wk][dayIdx]) ? allSched[u][wk][dayIdx] : "";
-        if (!sched || sched === "Off" || sched === "--" || sched === "Annual Leave" || sched === "Sick Leave") return;
-
-        const att = allUsers[u]?.attendance?.[date];
+        const user = allUsers[u];
+        const realName = user.realName || u;
+        const att = user.attendance?.[date];
         const isPresent = !!(att && att.clockIn);
+        
+        let sched = (allSched[u] && allSched[u][wk] && allSched[u][wk][dayIdx]) ? allSched[u][wk][dayIdx] : "";
+        const isOff = !sched || sched === "Off" || sched === "--" || sched === "Annual Leave" || sched === "Sick Leave";
 
-        // استخراج وقت بداية الدوام
+        // --- 1. حالة الحضور بدون جدول (يوم إجازة أصلاً) ---
+        if (isOff && isPresent) {
+            swapCount++;
+            swapNames.push({
+                name: realName,
+                info: `بدون جدول (حضر ${att.clockIn})`
+            });
+            return; // لا نكمل التحليل للشفتات الملونة لأنه خارج الجدول
+        }
+
+        if (isOff) return;
+
+        // --- 2. تحليل وقت الوردية المجدولة ---
         let matchTime = sched.match(/(\d{1,2}):(\d{2})/);
         let startHour = 0;
         let startMinutes = 0;
@@ -1703,15 +1800,36 @@ function updateQuickScanner() {
         
         const shiftStartTotalMinutes = startHour * 60 + startMinutes;
 
-        // تحديد الحالة: حاضر، في الطريق، أو غائب
-        let status = "absent";
+        // --- 3. المنطق المطلوب: كشف تغيير الشفت (تأخير > 45 دقيقة) ---
         if (isPresent) {
-            status = "present";
-        } else if (isToday && currentTotalMinutes < shiftStartTotalMinutes) {
-            status = "onway"; // لسه ميعاده مجاش
+            // تنظيف الوقت من AM/PM لتحويله لدقائق دقيقة
+            let timeClean = att.clockIn.replace(/(AM|PM)/i, '').trim();
+            let [actualH, actualM] = timeClean.split(':').map(Number);
+            
+            // تحويل لنظام 24 ساعة للحساب الصحيح
+            if (att.clockIn.toLowerCase().includes('pm') && actualH !== 12) actualH += 12;
+            if (att.clockIn.toLowerCase().includes('am') && actualH === 12) actualH = 0;
+            
+            let actualTotalMins = (actualH * 60) + actualM;
+            let delay = actualTotalMins - shiftStartTotalMinutes;
+
+            if (delay > 45) {
+                swapCount++;
+                // تحديد الشفت الذي دخله الموظف فعلياً (تقريب للساعة)
+                let arrivalHour = actualH > 12 ? actualH - 12 : (actualH === 0 ? 12 : actualH);
+                
+                swapNames.push({
+                    name: realName,
+                    info: `غير شيفته من ${startHour} جيه ${arrivalHour} (تأخير ${delay}د)`
+                });
+            }
         }
 
-        // تصنيف الشفت للكرات
+        // --- 4. تصنيف الموظف داخل كروت الشفتات (حتى لو غير شيفته يظل محسوباً في ورديته الأصلية كحاضر) ---
+        let status = "absent";
+        if (isPresent) status = "present";
+        else if (isToday && currentTotalMinutes < shiftStartTotalMinutes) status = "onway";
+
         let shiftKey = null;
         if (sched.includes('خالي') || startHour === 7) shiftKey = '7';
         else if (sched.includes('دي') || startHour === 8) shiftKey = '8';
@@ -1722,11 +1840,7 @@ function updateQuickScanner() {
         if (shiftKey && shiftsData[shiftKey]) {
             shiftsData[shiftKey].req++;
             totalRequired++;
-            shiftsData[shiftKey].names.push({
-                name: allUsers[u].realName || u,
-                status: status // الحالة الجديدة
-            });
-
+            shiftsData[shiftKey].names.push({ name: realName, status: status });
             if (isPresent) {
                 shiftsData[shiftKey].pres++;
                 totalPresent++;
@@ -1734,53 +1848,51 @@ function updateQuickScanner() {
         }
     });
 
-    // تحديث واجهة العرض
+    // --- تحديث الـ UI (نفس الكود السابق مع عرض الداتا الجديدة) ---
     for (let key in shiftsData) {
         const data = shiftsData[key];
         const valEl = document.getElementById(`countShift${key}`);
         if (!valEl) continue;
-
         const card = valEl.closest('.scanner-card');
-        const abs = data.req - data.pres;
-
         valEl.textContent = data.req;
         document.getElementById(`pres${key}`).textContent = data.pres;
-        document.getElementById(`abs${key}`).textContent = abs;
+        document.getElementById(`abs${key}`).textContent = data.req - data.pres;
         card.style.opacity = data.req === 0 ? "0.3" : "1";
 
-        let tooltip = card.querySelector('.scanner-tooltip');
-        if (!tooltip) {
-            tooltip = document.createElement('div');
-            tooltip.className = 'scanner-tooltip';
-            card.appendChild(tooltip);
-        }
+        let tooltip = card.querySelector('.scanner-tooltip') || document.createElement('div');
+        tooltip.className = 'scanner-tooltip';
+        if (!card.querySelector('.scanner-tooltip')) card.appendChild(tooltip);
 
         if (data.names.length > 0) {
             let namesHTML = `<div class="tt-title">موظفي شفت ${key}</div><div class="tt-list">`;
-            
-            // ترتيب الموظفين: حاضر أولاً، ثم في الطريق، ثم غائب
-            data.names.sort((a, b) => {
-                const order = { 'present': 1, 'onway': 2, 'absent': 3 };
-                return order[a.status] - order[b.status];
-            }).forEach(emp => {
-                let statusClass = '';
-                let statusText = '';
-                
-                if (emp.status === 'present') {
-                    statusClass = 'tt-present';
-                    statusText = '●';
-                } else if (emp.status === 'onway') {
-                    statusClass = 'tt-onway';
-                    statusText = '<i class="fa-solid fa-person-running"></i> جَي في السكة';
-                } else {
-                    statusClass = 'tt-absent';
-                    statusText = '🚫 غائب';
-                }
-
-                namesHTML += `<div class="tt-item ${statusClass}"><span>${emp.name}</span><span>${statusText}</span></div>`;
+            data.names.sort((a,b) => (a.status==='present'? -1 : 1)).forEach(emp => {
+                let sIcon = emp.status === 'present' ? '●' : (emp.status === 'onway' ? 'في السكه🏃' : '🚫');
+                namesHTML += `<div class="tt-item tt-${emp.status}"><span>${emp.name}</span><span>${sIcon}</span></div>`;
             });
-            namesHTML += `</div>`;
-            tooltip.innerHTML = namesHTML;
+            tooltip.innerHTML = namesHTML + `</div>`;
+        }
+    }
+
+    const extraVal = document.getElementById('countShiftExtra');
+    if (extraVal) {
+        extraVal.textContent = swapCount;
+        const extraCard = extraVal.closest('.scanner-card');
+        extraCard.style.opacity = swapCount === 0 ? "0.4" : "1";
+        
+        let tooltip = document.getElementById('tooltipExtra');
+        if (tooltip) {
+            if (swapNames.length > 0) {
+                let html = `<div class="tt-title">تفاصيل الحضور الإضافي وتغيير الوردية</div><div class="tt-list">`;
+                swapNames.forEach(n => {
+                    html += `<div class="tt-item" style="color:#ec4899; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom:4px; margin-bottom:4px;">
+                                <span style="font-weight:bold;">${n.name}</span>
+                                <span style="font-size:0.7rem; display:block; color:#f472b6;">${n.info}</span>
+                             </div>`;
+                });
+                tooltip.innerHTML = html + `</div>`;
+            } else {
+                tooltip.innerHTML = `<div style="font-size:0.7rem; color:gray;">لا يوجد تغيير وردية اليوم</div>`;
+            }
         }
     }
 
