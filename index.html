@@ -546,6 +546,25 @@
                 </div>
 
                 <div class="tabs-nav">
+                    <button class="tab-btn" data-tab="tabSwaps" onclick="switchTab(this)"><i class="fa-solid fa-right-left"></i> طلبات التبديل</button>
+
+<!-- محتوى التبويب -->
+<div id="tabSwaps" class="tab-panel">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>من الموظف</th>
+                    <th>إلى الزميل</th>
+                    <th>اليوم</th>
+                    <th>الأسبوع</th>
+                    <th>الإجراء</th>
+                </tr>
+            </thead>
+            <tbody id="swapRequestsBody"></tbody>
+        </table>
+    </div>
+</div>
                     <button class="tab-btn active" data-tab="tabAtt" onclick="switchTab(this)"><i class="fa-solid fa-table-list"></i> البصمة</button>
                     <button class="tab-btn" data-tab="tabShifts" onclick="switchTab(this)"><i class="fa-solid fa-calendar-days"></i> المناوبات</button>
                     <button class="tab-btn" data-tab="tabReports" onclick="switchTab(this)"><i class="fa-solid fa-file-excel"></i> التقارير</button>
@@ -786,6 +805,13 @@
                     <option value="Unpaid Leave">Unpaid Leave (إجازة غير مدفوعة)</option>
                 </select>
             </div>
+            <!-- أضف هذا الجزء داخل modal-box في نافذة corrModal -->
+<div class="form-group" style="display:flex; align-items:center; gap:10px; background:rgba(14,165,233,0.1); padding:12px; border-radius:12px; margin-bottom:15px; border:1px dashed var(--primary);">
+    <input type="checkbox" id="corrPermission" style="width:20px; height:20px; cursor:pointer;">
+    <label style="margin:0; color:var(--primary); font-weight:700; cursor:pointer;" for="corrPermission">
+        <i class="fa-solid fa-clock-rotate-left"></i> منح إذن (ساعتين تأخير/خروج)
+    </label>
+</div>
             <div class="modal-actions">
                 <button class="btn btn-success" onclick="saveCorr()"><i class="fa-solid fa-floppy-disk"></i> حفظ التعديل</button>
                 <button class="btn btn-ghost" onclick="closeCorr()">إلغاء</button>
@@ -1200,6 +1226,7 @@
     function goToday(){currentAttDate=TODAY;updateAttDateLabel();renderAttTable();}
 
     function renderAttTable(){
+    
         const date=currentAttDate,tb=document.getElementById('attBody');if(!tb)return;tb.innerHTML='';
         const isAdmin=ME&&ME.role==='admin';
         Object.keys(allUsers).forEach(u=>{
@@ -1279,19 +1306,32 @@
                         const schedTotalMins = sh * 60 + sm;
                         const actualTotalMins = ah * 60 + am;
                         
-                        const delay = actualTotalMins - schedTotalMins; // الفرق الصافي
+// الحسبة الجديدة مع مراعاة الإذن
+const delay = actualTotalMins - schedTotalMins; // التأخير الفعلي
+const permissionMinutes = (att.hasPermission) ? 120 : 0; // لو فيه إذن يبقوا 120 دقيقة
+const finalDelay = delay - permissionMinutes; // التأخير اللي هيتحاسب عليه
 
+// لو التأخير بعد خصم الإذن لسه أكتر من 45 دقيقة، سجل مخالفة
+if (finalDelay > 45) {
+    rep[u].shiftChange++;
+    rep[u].details.changed.push({
+        date: ds,
+        scheduledStart: st.start,
+        actualIn: att.clockIn,
+        diffMinutes: finalDelay // يسجل الدقائق الصافية
+    });
+}
                         // لو الفرق موجب (يعني متأخر) وأكبر من 45 دقيقة
-                        if (delay > 45) {
-                            rep[u].shiftChange++;
-                            rep[u].details.changed.push({
-                                date: ds,
-                                scheduledStart: st.start,
-                                scheduledEnd: st.end,
-                                actualIn: att.clockIn,
-                                diffMinutes: delay
-                            });
-                        }
+                   if (delay > 45) { 
+    rep[u].shiftChange++;
+    rep[u].details.changed.push({
+        date: ds,
+        scheduledStart: st.start,
+        actualIn: att.clockIn,
+        diffMinutes: delay,
+        withPermission: att.hasPermission // السطر ده مهم جداً عشان يبعت حالة الإذن للتفاصيل
+    });
+}
                     }
                 }
             }
@@ -1310,47 +1350,47 @@
         document.getElementById('shiftReportTable').classList.remove('hidden');
     }
     function openShiftDetail(u){
-        if(!lastShiftReport || !lastShiftReport[u]) return;
-        const r = lastShiftReport[u];
-        document.getElementById('shiftDetailTitle').innerHTML = `<i class="fa-solid fa-clipboard-list"></i> تفاصيل: ${r.name}`;
-        let h = '';
+    if(!lastShiftReport || !lastShiftReport[u]) return;
+    const r = lastShiftReport[u];
+    document.getElementById('shiftDetailTitle').innerHTML = `<i class="fa-solid fa-clipboard-list"></i> تفاصيل: ${r.name}`;
+    let h = '';
 
-        // 1. عرض أيام الغياب
-        if(r.details.absent.length){
-            h += `<div style="margin-bottom:16px;"><div style="font-weight:700;color:var(--danger);margin-bottom:8px;">غياب في وردية</div>`;
-            r.details.absent.forEach(i => {
-                h += `<div class="detail-row"><span class="detail-date">${i.date}</span><span class="detail-actual absent">الوردية كانت: ${i.scheduled} | غائب</span></div>`;
-            });
-            h += '</div>';
-        }
-
-        // 2. عرض أيام الحضور في الإجازة
-        if(r.details.offDay.length){
-            h += `<div style="margin-bottom:16px;"><div style="font-weight:700;color:var(--accent);margin-bottom:8px;">نزل في إجازة</div>`;
-            r.details.offDay.forEach(i => {
-                h += `<div class="detail-row"><span class="detail-date">${i.date}</span><span class="detail-actual offday">دخل ${i.clockIn} (كان يوم إجازة)</span></div>`;
-            });
-            h += '</div>';
-        }
-
-        // 3. عرض أيام التأخير (تعديل السطر ده هو اللي محتاجه)
-        if(r.details.changed.length){
-            h += `<div style="margin-bottom:16px;"><div style="font-weight:700;color:var(--primary);margin-bottom:8px;">تأخير</div>`;
-            r.details.changed.forEach(i => {
-                // التعديل هنا: هيعرض وقت الوردية ووقت الحضور والفرق
-                h += `<div class="detail-row">
-                        <span class="detail-date">${i.date}</span>
-                        <span class="detail-actual late">
-                            الوردية: ${i.scheduledStart} | جيه: ${i.actualIn} (${i.diffMinutes} د)
-                        </span>
-                    </div>`;
-            });
-            h += '</div>';
-        }
-
-        document.getElementById('shiftDetailContent').innerHTML = h;
-        document.getElementById('shiftDetailModal').classList.add('open');
+    // 1. أيام الغياب
+    if(r.details.absent.length){
+        h += `<div style="margin-bottom:16px;"><div style="font-weight:700;color:var(--danger);margin-bottom:8px;">غياب في وردية</div>`;
+        r.details.absent.forEach(i => {
+            h += `<div class="detail-row"><span class="detail-date">${i.date}</span><span class="detail-actual absent">الوردية كانت: ${i.scheduled} | غائب</span></div>`;
+        });
+        h += '</div>';
     }
+
+    // 2. أيام الحضور في الإجازة
+    if(r.details.offDay.length){
+        h += `<div style="margin-bottom:16px;"><div style="font-weight:700;color:var(--accent);margin-bottom:8px;">نزل في إجازة</div>`;
+        r.details.offDay.forEach(i => {
+            h += `<div class="detail-row"><span class="detail-date">${i.date}</span><span class="detail-actual offday">دخل ${i.clockIn} (كان يوم إجازة)</span></div>`;
+        });
+        h += '</div>';
+    }
+
+    // 3. أيام التأخير (هنا التعديل اللي سألت عليه)
+    if(r.details.changed.length){
+        h += `<div style="margin-bottom:16px;"><div style="font-weight:700;color:var(--primary);margin-bottom:8px;">تأخير</div>`;
+        r.details.changed.forEach(i => {
+            h += `<div class="detail-row">
+                    <span class="detail-date">${i.date}</span>
+                    <span class="detail-actual late">
+                        الوردية: ${i.scheduledStart} | الحضور: ${i.actualIn}
+                        ${i.withPermission ? `<br><b style="color:var(--success); font-size:0.8rem;">✅ (بإذن ساعتين من المشرف)</b>` : ''}
+                    </span>
+                </div>`;
+        });
+        h += '</div>';
+    }
+
+    document.getElementById('shiftDetailContent').innerHTML = h;
+    document.getElementById('shiftDetailModal').classList.add('open');
+}
     function closeShiftDetail(){document.getElementById('shiftDetailModal').classList.remove('open');}
 
     function xlShiftReport(){if(!lastShiftReport){toast('شغّل التقرير أولاً','warn');return;}const wb=XLSX.utils.book_new();const rows=[];Object.keys(lastShiftReport).forEach(u=>{const r=lastShiftReport[u];rows.push({'الموظف':r.name,'غياب في وردية':r.absentInShift,'نزل في إجازة':r.cameOnOff,'تغيير شيفت':r.shiftChange,'إجمالي':r.absentInShift+r.cameOnOff+r.shiftChange});});const ws=XLSX.utils.json_to_sheet(rows);ws['!dir']="rtl";XLSX.utils.book_append_sheet(wb,ws,'تقرير');XLSX.writeFile(wb,`تقرير_${TODAY}.xlsx`);toast('تم التصدير','success');}
@@ -1724,17 +1764,38 @@
     document.getElementById('simpleDetailModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeSimpleDetail();});
     checkAutoLogin();
 
-    function openCorr(u,date){
-        corrTarget={u,date};const user=allUsers[u];const att=user.attendance&&user.attendance[date]?user.attendance[date]:{};
-        document.getElementById('corrUserName').textContent=user.realName||u;document.getElementById('corrDateText').textContent=date;
-        document.getElementById('corrIn').value=att.clockIn||"";document.getElementById('corrOut').value=att.clockOut||"";
-        document.getElementById('corrStatus').value=att.status||"Absent";document.getElementById('corrModal').classList.add('open');
-    }
+  function openCorr(u,date){
+    corrTarget={u,date};const user=allUsers[u];const att=user.attendance&&user.attendance[date]?user.attendance[date]:{};
+    document.getElementById('corrUserName').textContent=user.realName||u;
+    document.getElementById('corrDateText').textContent=date;
+    document.getElementById('corrIn').value=att.clockIn||"";
+    document.getElementById('corrOut').value=att.clockOut||"";
+    document.getElementById('corrStatus').value=att.status||"Absent";
+    
+    // إضافة هذا السطر لضبط علامة الصح
+    document.getElementById('corrPermission').checked = !!att.hasPermission; 
+    
+    document.getElementById('corrModal').classList.add('open');
+}
     function closeCorr(){document.getElementById('corrModal').classList.remove('open');}
-    function saveCorr(){
-        const{u,date}=corrTarget;const clockIn=document.getElementById('corrIn').value;const clockOut=document.getElementById('corrOut').value;const status=document.getElementById('corrStatus').value;
-        db.ref(`users/${u}/attendance/${date}`).update({clockIn:clockIn||null,clockOut:clockOut||null,status:status,date:date}).then(()=>{toast('تم تحديث السجل','success');closeCorr();}).catch(()=>toast('خطأ','error'));
-    }
+ function saveCorr(){
+    const{u,date}=corrTarget;
+    const clockIn=document.getElementById('corrIn').value;
+    const clockOut=document.getElementById('corrOut').value;
+    const status=document.getElementById('corrStatus').value;
+    const hasPermission = document.getElementById('corrPermission').checked; // جلب القيمة
+
+    db.ref(`users/${u}/attendance/${date}`).update({
+        clockIn:clockIn||null,
+        clockOut:clockOut||null,
+        status:status,
+        date:date,
+        hasPermission: hasPermission // حفظ في الداتابيز
+    }).then(()=>{
+        toast('تم تحديث السجل والبرمشن','success');
+        closeCorr();
+    }).catch(()=>toast('خطأ','error'));
+}
     function deleteFullDay(){
         const{u,date}=corrTarget;const userName=document.getElementById('corrUserName').textContent;
         if(confirm(`حذف سجل اليوم بالكامل للموظف: ${userName}؟`)){db.ref(`users/${u}/attendance/${date}`).remove().then(()=>{toast('تم حذف سجل اليوم','warn');closeCorr();}).catch(()=>toast('فشل الحذف','error'));}
@@ -1773,19 +1834,14 @@ function updateQuickScanner() {
         let sched = (allSched[u] && allSched[u][wk] && allSched[u][wk][dayIdx]) ? allSched[u][wk][dayIdx] : "";
         const isOff = !sched || sched === "Off" || sched === "--" || sched === "Annual Leave" || sched === "Sick Leave";
 
-        // --- 1. حالة الحضور بدون جدول (يوم إجازة أصلاً) ---
         if (isOff && isPresent) {
             swapCount++;
-            swapNames.push({
-                name: realName,
-                info: `بدون جدول (حضر ${att.clockIn})`
-            });
-            return; // لا نكمل التحليل للشفتات الملونة لأنه خارج الجدول
+            swapNames.push({ name: realName, info: `بدون جدول (حضر ${att.clockIn})` });
+            return;
         }
 
         if (isOff) return;
 
-        // --- 2. تحليل وقت الوردية المجدولة ---
         let matchTime = sched.match(/(\d{1,2}):(\d{2})/);
         let startHour = 0;
         let startMinutes = 0;
@@ -1800,35 +1856,29 @@ function updateQuickScanner() {
         
         const shiftStartTotalMinutes = startHour * 60 + startMinutes;
 
-        // --- 3. المنطق المطلوب: كشف تغيير الشفت (تأخير > 45 دقيقة) ---
+        // --- التعديل هنا (حساب الحالة بناءً على التأخير والإذن) ---
+        let status = "absent";
         if (isPresent) {
-            // تنظيف الوقت من AM/PM لتحويله لدقائق دقيقة
             let timeClean = att.clockIn.replace(/(AM|PM)/i, '').trim();
             let [actualH, actualM] = timeClean.split(':').map(Number);
-            
-            // تحويل لنظام 24 ساعة للحساب الصحيح
             if (att.clockIn.toLowerCase().includes('pm') && actualH !== 12) actualH += 12;
             if (att.clockIn.toLowerCase().includes('am') && actualH === 12) actualH = 0;
             
             let actualTotalMins = (actualH * 60) + actualM;
             let delay = actualTotalMins - shiftStartTotalMinutes;
 
-            if (delay > 45) {
-                swapCount++;
-                // تحديد الشفت الذي دخله الموظف فعلياً (تقريب للساعة)
-                let arrivalHour = actualH > 12 ? actualH - 12 : (actualH === 0 ? 12 : actualH);
-                
-                swapNames.push({
-                    name: realName,
-                    info: `غير شيفته من ${startHour} جيه ${arrivalHour} (تأخير ${delay}د)`
-                });
-            }
-        }
+            // طرح الإذن (120 دقيقة) لو موجود
+            let effectiveDelay = (att && att.hasPermission) ? (delay - 120) : delay;
 
-        // --- 4. تصنيف الموظف داخل كروت الشفتات (حتى لو غير شيفته يظل محسوباً في ورديته الأصلية كحاضر) ---
-        let status = "absent";
-        if (isPresent) status = "present";
-        else if (isToday && currentTotalMinutes < shiftStartTotalMinutes) status = "onway";
+            // لو متأخر أكتر من 45 دقيقة بعد الإذن يظهر "متأخر" غير كدة "حاضر"
+            if (effectiveDelay > 45) {
+                status = "absent"; // هنخلي لونه أحمر كأنه غايب أو متأخر جداً (أو سيبها "late")
+            } else {
+                status = "present"; // حاضر سليم لأن الإذن غطى التأخير
+            }
+        } else if (isToday && currentTotalMinutes < shiftStartTotalMinutes) {
+            status = "onway";
+        }
 
         let shiftKey = null;
         if (sched.includes('خالي') || startHour === 7) shiftKey = '7';
@@ -1848,7 +1898,7 @@ function updateQuickScanner() {
         }
     });
 
-    // --- تحديث الـ UI (نفس الكود السابق مع عرض الداتا الجديدة) ---
+    // تحديث الأرقام والـ UI
     for (let key in shiftsData) {
         const data = shiftsData[key];
         const valEl = document.getElementById(`countShift${key}`);
@@ -1873,34 +1923,63 @@ function updateQuickScanner() {
         }
     }
 
-    const extraVal = document.getElementById('countShiftExtra');
-    if (extraVal) {
-        extraVal.textContent = swapCount;
-        const extraCard = extraVal.closest('.scanner-card');
-        extraCard.style.opacity = swapCount === 0 ? "0.4" : "1";
-        
-        let tooltip = document.getElementById('tooltipExtra');
-        if (tooltip) {
-            if (swapNames.length > 0) {
-                let html = `<div class="tt-title">تفاصيل الحضور الإضافي وتغيير الوردية</div><div class="tt-list">`;
-                swapNames.forEach(n => {
-                    html += `<div class="tt-item" style="color:#ec4899; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom:4px; margin-bottom:4px;">
-                                <span style="font-weight:bold;">${n.name}</span>
-                                <span style="font-size:0.7rem; display:block; color:#f472b6;">${n.info}</span>
-                             </div>`;
-                });
-                tooltip.innerHTML = html + `</div>`;
-            } else {
-                tooltip.innerHTML = `<div style="font-size:0.7rem; color:gray;">لا يوجد تغيير وردية اليوم</div>`;
-            }
-        }
-    }
-
     if(document.getElementById('totalPresentCount')) document.getElementById('totalPresentCount').textContent = totalPresent;
     if(document.getElementById('totalAbsentCount')) document.getElementById('totalAbsentCount').textContent = totalRequired - totalPresent;
     if(document.getElementById('totalRequiredCount')) document.getElementById('totalRequiredCount').textContent = `من ${totalRequired}`;
-    if(document.getElementById('totalRequiredCount2')) document.getElementById('totalRequiredCount2').textContent = `من ${totalRequired}`;
 }
+// استماع لطلبات التبديل
+// كود عرض طلبات التبديل في لوحة الأدمن
+// كود عرض "سجل التبديلات" في لوحة الأدمن
+db.ref('swapRequests').on('value', (snap) => {
+    const swaps = snap.val();
+    const tbody = document.getElementById('swapRequestsBody');
+    if(!tbody) return;
+    tbody.innerHTML = '';
+
+    if(!swaps) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; opacity:0.5;">لا توجد عمليات تبديل مسجلة</td></tr>';
+        return;
+    }
+
+    // تحويل الكائن لمصفوفة وعرض العمليات المكتملة فقط
+    Object.entries(swaps).reverse().forEach(([key, s]) => {
+        if(s.status === "completed") {
+            tbody.innerHTML += `
+                <tr>
+                    <td style="color: var(--primary); font-weight:bold;">${s.fromUserName}</td>
+                    <td style="color: var(--accent); font-weight:bold;">${s.toUserName}</td>
+                    <td>${s.dayName}</td>
+                    <td style="font-size:0.75rem; color:var(--text-dim);">${s.weekKey}</td>
+                    <td>
+                        <span class="badge badge-ok" style="background: rgba(16, 185, 129, 0.2); border: 1px solid var(--success);">
+                           <i class="fa-solid fa-check-double"></i> تم التبديل تلقائياً
+                        </span>
+                    </td>
+                </tr>`;
+        }
+    });
+});
+
+// في ملف الأدمن - تعديل جدول عرض التبديلات
+if(s.status === "completed") {
+    const shiftA = s.fromShift === 'Off' ? 'إجازة' : s.fromShift;
+    const shiftB = s.toShift === 'Off' ? 'إجازة' : s.toShift;
+
+    tbody.innerHTML += `
+        <tr>
+            <td>${s.fromUserName} <br> <small style="color:#10b981;">(أصبح: ${shiftB})</small></td>
+            <td>${s.toUserName} <br> <small style="color:#10b981;">(أصبح: ${shiftA})</small></td>
+            <td>${s.dayName}</td>
+            <td style="font-size:0.7rem;">${s.weekKey}</td>
+            <td>
+                <span class="badge badge-ok">تم التبديل</span>
+            </td>
+        </tr>`;
+}
+
+function rejectSwap(swapId) {
+    db.ref('swapRequests/' + swapId).update({ status: "rejected" });
+}       
     </script>
     </body>
     </html>
