@@ -2020,16 +2020,13 @@ function openShiftDetail(u) {
     document.getElementById('shiftDetailTitle').innerHTML = `<i class="fa-solid fa-clipboard-list"></i> تفاصيل: ${r.name}`;
     let html = '';
 
-    if (r.details.changed.length > 0) {
+    // 1. سجلات التأخير والاستئذان
+    if (r.details.changed && r.details.changed.length > 0) {
         html += `<div style="margin-bottom:20px;"><div style="font-weight:700;color:var(--primary);margin-bottom:12px;">سجلات التأخير والاستئذان</div>`;
-        
         r.details.changed.forEach(item => {
-            const label = item.isAuthorized ? "استئذان مقبول" : "تغيير شفت (غير مسموح)";
+            const label = item.isAuthorized ? "استئذان مقبول" : "تغيير شفت (تأخير)";
             const badgeClass = item.isAuthorized ? "badge-info" : "badge-no";
-            const lateColor = item.isAuthorized ? 'var(--primary)' : 'var(--danger)';
             const tagClass = item.isAuthorized ? 'dc-delay-tag dc-perm-tag' : 'dc-delay-tag';
-
-            // حساب هل التأخير أكثر من المسموح به أم لا
             const allowedMinutes = (item.allowedHours || 0) * 60;
             const extraLate = item.diffMinutes - allowedMinutes;
 
@@ -2046,31 +2043,59 @@ function openShiftDetail(u) {
                     </div>
                     <div class="dc-arrow"><i class="fa-solid fa-arrow-left"></i></div>
                     <div class="dc-info-group">
-                        <div class="dc-label">وصول البصمة</div>
-                        <div class="dc-value" style="color:${lateColor}">${item.actualIn}</div>
+                        <div class="dc-label">البصمة</div>
+                        <div class="dc-value">${item.actualIn}</div>
                     </div>
                     <div class="dc-info-group" style="text-align:left;">
                         <div class="dc-label">إجمالي التأخير</div>
                         <div class="${tagClass}">${item.diffMinutes} دقيقة</div>
                     </div>
                 </div>
-                
-                ${item.isAuthorized ? `
-                <div style="margin-top:10px; padding-top:8px; border-top:1px dashed rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center;">
-                    <div style="font-size:0.75rem; color:var(--primary); font-weight:700;">
-                        <i class="fa-solid fa-user-check"></i> الإذن الممنوح: ${item.allowedHours} ساعة (${allowedMinutes} دقيقة)
-                    </div>
-                    ${extraLate > 0 ? `
-                    <div style="font-size:0.7rem; color:var(--accent);">
-                         تأخر إضافي: ${extraLate} دقيقة
-                    </div>` : `
-                    <div style="font-size:0.7rem; color:var(--success);">مغطى بالإذن ✅</div>`}
-                </div>` : ''}
             </div>`;
         });
         html += `</div>`;
     }
-    // ... باقي الدالة (الغياب والحضور الإضافي) كما هي ...
+
+    // 2. سجلات الغياب في وردية عمل
+    if (r.details.absent && r.details.absent.length > 0) {
+        html += `<div style="margin-bottom:20px;"><div style="font-weight:700;color:var(--danger);margin-bottom:12px;">أيام الغياب (وردية غير مسجلة)</div>`;
+        r.details.absent.forEach(item => {
+            html += `
+            <div class="detail-card" style="border-right: 4px solid var(--danger);">
+                <div class="dc-header">
+                    <span class="dc-date">${item.date}</span>
+                    <span class="badge badge-no">غائب</span>
+                </div>
+                <div style="font-size:0.85rem; color:var(--text-dim);">كان من المفترض التواجد في وردية: <b style="color:#fff">${item.scheduled}</b></div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    // 3. سجلات الحضور في أيام الإجازة
+    if (r.details.offDay && r.details.offDay.length > 0) {
+        html += `<div style="margin-bottom:20px;"><div style="font-weight:700;color:var(--accent);margin-bottom:12px;">حضور في أيام إجازة (إضافي)</div>`;
+        r.details.offDay.forEach(item => {
+            html += `
+            <div class="detail-card" style="border-right: 4px solid var(--accent);">
+                <div class="dc-header">
+                    <span class="dc-date">${item.date}</span>
+                    <span class="badge badge-wait">يوم إجازة</span>
+                </div>
+                <div style="font-size:0.85rem; color:var(--text-dim);">سجل بصمة دخول الساعة: <b style="color:#fff">${item.clockIn}</b></div>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    // حالة عدم وجود أي مخالفات
+    if (html === '') {
+        html = `<div style="text-align:center; padding:40px 20px;">
+                    <i class="fa-solid fa-circle-check" style="font-size:3rem; color:var(--success); margin-bottom:15px;"></i>
+                    <p style="font-weight:700;">السجل نظيف تماماً لهذه الفترة</p>
+                </div>`;
+    }
+
     document.getElementById('shiftDetailContent').innerHTML = html;
     document.getElementById('shiftDetailModal').classList.add('open');
 }
