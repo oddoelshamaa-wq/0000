@@ -745,7 +745,7 @@
                         </div>
                         <div class="table-wrap hidden" id="shiftReportTable" style="margin-top:14px;">
                             <table>
-                                <thead><tr><th>الموظف</th><th>غياب في وردية</th><th>نزل في إجازة</th><th>تغيير شيفت</th>    <th style="color: #8b5cf6;">استئذان</th><th>إجمالي</th><th>تفاصيل</th></tr></thead>
+                                <thead><tr><th>الموظف</th><th>غياب في وردية</th><th>نزل في إجازة</th><th>تغيير شيفت</th>    <th style="color: #8b5cf6;">استئذان</th> <th style="color: #8b5cf6;">تاخير</th><th>إجمالي</th><th>تفاصيل</th></tr></thead>
                                 <tbody id="shiftReportBody"></tbody>
                             </table>
                         </div>
@@ -1310,9 +1310,9 @@ function generateShiftReport(from, to, ef) {
             absentInShift: 0, 
             cameOnOff: 0, 
             shiftChange: 0,      
+            lateArrival: 0,     // حقل جديد للتأخير
             authorizedPerms: 0,  
-            permissionHours: 0,  
-            details: { absent: [], offDay: [], changed: [] } 
+            details: [] 
         };
         const atts = allUsers[u].attendance || {};
         
@@ -1322,50 +1322,64 @@ function generateShiftReport(from, to, ef) {
             const di = (d.getDay() + 1) % 7, wk = weekKey(ds);
             let sv = allSched[u]?.[wk]?.[di];
             
-            // تحديد هل اليوم "إجازة" أم "يوم عمل"
             const isOff = !sv || sv === 'Off' || sv === 'Annual Leave' || sv === 'Sick Leave' || sv === '--' || sv === '';
             const st = isOff ? null : parseShiftTime(sv);
-            const ci = att && att.clockIn; // البصمة (وقت الدخول)
+            const ci = att && att.clockIn;
+            const co = att && att.clockOut;
 
-            if (isOff) {
-                // لو اليوم إجازة في الجدول ومع ذلك الموظف بصم حضور
-                if (ci) { 
-                    rep[u].cameOnOff++; 
-                    rep[u].details.offDay.push({ date: ds, scheduled: sv || 'إجازة', clockIn: att.clockIn }); 
-                }
-            } else if (st) {
-                // لو الموظف عنده وردية (يوم عمل)
+            if (!isOff && st) {
                 if (!ci) {
-                    // لم يسجل بصمة دخول إطلاقاً -> يُحسب غياب في وردية
                     rep[u].absentInShift++; 
-                    rep[u].details.absent.push({ date: ds, scheduled: sv });
+                    rep[u].details.push({ date: ds, type: 'absent', scheduled: sv });
                 } else {
-                    // سجل بصمة دخول -> نفحص هل هو تأخير أم استئذان مقبول
-                    const [sh, sm] = st.start.split(':').map(Number);
-                    let timeClean = att.clockIn.replace(/(AM|PM)/i, '').trim();
-                    let [ah, am] = timeClean.split(':').map(Number);
+                    // حساب وقت الدخول بالدقائق
+                    let [sh, sm] = st.start.split(':').map(Number);
+                    let [eh, em] = st.end.split(':').map(Number);
+                    
+                    let timeInClean = att.clockIn.replace(/(AM|PM)/i, '').trim();
+                    let [ah, am] = timeInClean.split(':').map(Number);
                     if (att.clockIn.toLowerCase().includes('pm') && ah !== 12) ah += 12;
                     if (att.clockIn.toLowerCase().includes('am') && ah === 12) ah = 0;
                     
                     const delay = (ah * 60 + am) - (sh * 60 + sm);
-                    
+
                     if (delay > 45) {
                         const allowedHours = att.permissionHours || 0;
-                        const hasPerm = allowedHours > 0;
-                        
-                        if (hasPerm) rep[u].authorizedPerms++;
-                        else rep[u].shiftChange++;
-                        
-                        rep[u].details.changed.push({ 
-                            date: ds, 
-                            scheduledStart: st.start, 
-                            actualIn: att.clockIn, 
-                            diffMinutes: delay,
-                            isAuthorized: hasPerm,
-                            allowedHours: allowedHours
-                        });
+                        // إذا كان هناك استئذان مسجل يظهر في خانة استئذان
+                        if (allowedHours > 0) {
+                            rep[u].authorizedPerms++;
+                            rep[u].details.push({ date: ds, type: 'perm', scheduled: st.start, actual: att.clockIn, delay: delay, allowedHours });
+                        } else {
+                            // منطق التفرقة: هل خرج الموظف في موعده أم تأخر؟
+                            let isShiftChange = false;
+                            if (co) {
+                                let timeOutClean = co.replace(/(AM|PM)/i, '').trim();
+                                let [aoh, aom] = timeOutClean.split(':').map(Number);
+                                if (co.toLowerCase().includes('pm') && aoh !== 12) aoh += 12;
+                                if (co.toLowerCase().includes('am') && aoh === 12) aoh = 0;
+                                
+                                const actualOutMins = (aoh * 60 + aom);
+                                const scheduledOutMins = (eh * 60 + em);
+                                
+                                // إذا استمر الموظف في العمل بعد موعد خروجه الأصلي بـ 45 دقيقة فأكثر، نعتبرها "تغيير وردية"
+                                if (actualOutMins > (scheduledOutMins + 45)) {
+                                    isShiftChange = true;
+                                }
+                            }
+
+                            if (isShiftChange) {
+                                rep[u].shiftChange++;
+                                rep[u].details.push({ date: ds, type: 'change', scheduled: st.start, actual: att.clockIn, delay: delay });
+                            } else {
+                                rep[u].lateArrival++;
+                                rep[u].details.push({ date: ds, type: 'late', scheduled: st.start, actual: att.clockIn, delay: delay });
+                            }
+                        }
                     }
                 }
+            } else if (isOff && ci) {
+                rep[u].cameOnOff++;
+                rep[u].details.push({ date: ds, type: 'extra', clockIn: att.clockIn });
             }
         }
     });
@@ -1381,26 +1395,28 @@ function runShiftReport() {
     const rep = generateShiftReport(f, t, em);
     lastShiftReport = rep;
     
-    document.getElementById('shiftSummary').classList.remove('hidden');
     const tb = document.getElementById('shiftReportBody');
     tb.innerHTML = '';
 
     Object.keys(rep).forEach(u => {
         const r = rep[u];
-        const totalViolations = r.absentInShift + r.shiftChange; // الغياب وتغيير الشفت (بدون إذن)
+        // الإجمالي يحسب (غياب + تغيير وردية + تأخير)
+        const totalViolations = r.absentInShift + r.shiftChange + r.lateArrival;
         
         tb.innerHTML += `<tr>
             <td style="text-align:right;font-weight:700;">${r.name}</td>
             <td>${r.absentInShift > 0 ? `<span class="badge badge-no">${r.absentInShift}</span>` : '0'}</td>
             <td>${r.cameOnOff > 0 ? `<span class="badge badge-wait">${r.cameOnOff}</span>` : '0'}</td>
-            <td>${r.shiftChange > 0 ? `<span class="badge badge-danger" style="background:rgba(244,63,94,0.1); border:1px solid var(--danger); color:var(--danger);">${r.shiftChange}</span>` : '0'}</td>
+            <td>${r.shiftChange > 0 ? `<span class="badge" style="background:rgba(245,158,11,0.1); border:1px solid var(--accent); color:var(--accent);">${r.shiftChange}</span>` : '0'}</td>
             <td style="color: #8b5cf6; font-weight: 800;">${r.authorizedPerms > 0 ? `<span class="badge" style="background:rgba(139,92,246,0.1); border:1px solid #8b5cf6; color:#8b5cf6;">${r.authorizedPerms}</span>` : '0'}</td>
+            <td style="color: #f43f5e; font-weight: 800;">${r.lateArrival > 0 ? `<span class="badge" style="background:rgba(244,63,94,0.1); border:1px solid var(--danger); color:var(--danger);">${r.lateArrival}</span>` : '0'}</td>
             <td style="font-weight:900; color:${totalViolations > 0 ? 'var(--danger)' : 'var(--success)'};">${totalViolations}</td>
             <td>
                 <button class="edit-btn" onclick="openShiftDetail('${u}')"><i class="fa-solid fa-eye"></i></button>
             </td>
         </tr>`;
     });
+    document.getElementById('shiftSummary').classList.remove('hidden');
     document.getElementById('shiftReportTable').classList.remove('hidden');
 }
     function closeShiftDetail(){document.getElementById('shiftDetailModal').classList.remove('open');}
@@ -2020,80 +2036,116 @@ function openShiftDetail(u) {
     document.getElementById('shiftDetailTitle').innerHTML = `<i class="fa-solid fa-clipboard-list"></i> تفاصيل: ${r.name}`;
     let html = '';
 
-    // 1. سجلات التأخير والاستئذان
-    if (r.details.changed && r.details.changed.length > 0) {
-        html += `<div style="margin-bottom:20px;"><div style="font-weight:700;color:var(--primary);margin-bottom:12px;">سجلات التأخير والاستئذان</div>`;
-        r.details.changed.forEach(item => {
-            const label = item.isAuthorized ? "استئذان مقبول" : "تغيير شفت (تأخير)";
-            const badgeClass = item.isAuthorized ? "badge-info" : "badge-no";
-            const tagClass = item.isAuthorized ? 'dc-delay-tag dc-perm-tag' : 'dc-delay-tag';
-            const allowedMinutes = (item.allowedHours || 0) * 60;
-            const extraLate = item.diffMinutes - allowedMinutes;
+    // ترتيب التفاصيل من الأحدث إلى الأقدم
+    const sortedDetails = (r.details || []).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            html += `
-            <div class="detail-card">
-                <div class="dc-header">
-                    <span class="dc-date"><i class="fa-regular fa-calendar-check"></i> ${item.date}</span>
-                    <span class="badge ${badgeClass}">${label}</span>
-                </div>
-                <div class="dc-body">
-                    <div class="dc-info-group">
-                        <div class="dc-label">الوردية</div>
-                        <div class="dc-value">${item.scheduledStart}</div>
+    if (sortedDetails.length > 0) {
+        sortedDetails.forEach(item => {
+            if (item.type === 'late') {
+                // حالة التأخير (حضر متأخر وخرج بدري)
+                html += `
+                <div class="detail-card" style="border-right: 4px solid #f43f5e;">
+                    <div class="dc-header">
+                        <span class="dc-date">${item.date}</span>
+                        <span class="badge badge-no">تأخير غير مبرر</span>
                     </div>
-                    <div class="dc-arrow"><i class="fa-solid fa-arrow-left"></i></div>
-                    <div class="dc-info-group">
-                        <div class="dc-label">البصمة</div>
-                        <div class="dc-value">${item.actualIn}</div>
+                    <div class="dc-body">
+                        <div class="dc-info-group"><div class="dc-label">الوردية</div><div class="dc-value">${item.scheduled}</div></div>
+                        <div class="dc-arrow"><i class="fa-solid fa-arrow-left"></i></div>
+                        <div class="dc-info-group"><div class="dc-label">البصمة</div><div class="dc-value">${item.actual}</div></div>
+                        <div class="dc-info-group" style="text-align:left;">
+                            <div class="dc-label">مدة التأخير</div>
+                            <div class="dc-delay-tag">${item.delay} دقيقة</div>
+                        </div>
                     </div>
-                    <div class="dc-info-group" style="text-align:left;">
-                        <div class="dc-label">إجمالي التأخير</div>
-                        <div class="${tagClass}">${item.diffMinutes} دقيقة</div>
-                    </div>
-                </div>
-            </div>`;
-        });
-        html += `</div>`;
-    }
-
-    // 2. سجلات الغياب في وردية عمل
-    if (r.details.absent && r.details.absent.length > 0) {
-        html += `<div style="margin-bottom:20px;"><div style="font-weight:700;color:var(--danger);margin-bottom:12px;">أيام الغياب (وردية غير مسجلة)</div>`;
-        r.details.absent.forEach(item => {
-            html += `
-            <div class="detail-card" style="border-right: 4px solid var(--danger);">
-                <div class="dc-header">
-                    <span class="dc-date">${item.date}</span>
-                    <span class="badge badge-no">غائب</span>
-                </div>
-                <div style="font-size:0.85rem; color:var(--text-dim);">كان من المفترض التواجد في وردية: <b style="color:#fff">${item.scheduled}</b></div>
-            </div>`;
-        });
-        html += `</div>`;
-    }
-
-    // 3. سجلات الحضور في أيام الإجازة
-    if (r.details.offDay && r.details.offDay.length > 0) {
-        html += `<div style="margin-bottom:20px;"><div style="font-weight:700;color:var(--accent);margin-bottom:12px;">حضور في أيام إجازة (إضافي)</div>`;
-        r.details.offDay.forEach(item => {
-            html += `
-            <div class="detail-card" style="border-right: 4px solid var(--accent);">
-                <div class="dc-header">
-                    <span class="dc-date">${item.date}</span>
-                    <span class="badge badge-wait">يوم إجازة</span>
-                </div>
-                <div style="font-size:0.85rem; color:var(--text-dim);">سجل بصمة دخول الساعة: <b style="color:#fff">${item.clockIn}</b></div>
-            </div>`;
-        });
-        html += `</div>`;
-    }
-
-    // حالة عدم وجود أي مخالفات
-    if (html === '') {
-        html = `<div style="text-align:center; padding:40px 20px;">
-                    <i class="fa-solid fa-circle-check" style="font-size:3rem; color:var(--success); margin-bottom:15px;"></i>
-                    <p style="font-weight:700;">السجل نظيف تماماً لهذه الفترة</p>
+                    <p style="font-size:0.75rem; color:var(--text-dim); margin-top:8px; background: rgba(244,63,94,0.05); padding: 5px; border-radius: 5px;">
+                        <i class="fa-solid fa-circle-info"></i> ملاحظة: الموظف خرج في موعده الأصلي (أو قبله) ولم يتم ساعات وردية أخرى.
+                    </p>
                 </div>`;
+            } 
+            else if (item.type === 'change') {
+                // حالة تغيير الوردية (حضر متأخر وعوض الوقت)
+                html += `
+                <div class="detail-card" style="border-right: 4px solid var(--accent);">
+                    <div class="dc-header">
+                        <span class="dc-date">${item.date}</span>
+                        <span class="badge badge-wait">تغيير وردية</span>
+                    </div>
+                    <div class="dc-body">
+                        <div class="dc-info-group"><div class="dc-label">الوردية الأصل</div><div class="dc-value">${item.scheduled}</div></div>
+                        <div class="dc-arrow"><i class="fa-solid fa-repeat"></i></div>
+                        <div class="dc-info-group"><div class="dc-label">البصمة</div><div class="dc-value">${item.actual}</div></div>
+                        <div class="dc-info-group" style="text-align:left;">
+                            <div class="dc-label">فرق التوقيت</div>
+                            <div class="dc-delay-tag" style="background:rgba(245,158,11,0.2); color:var(--accent); border-color:var(--accent);">${item.delay} دقيقة</div>
+                        </div>
+                    </div>
+                    <p style="font-size:0.75rem; color:var(--text-dim); margin-top:8px; background: rgba(245,158,11,0.05); padding: 5px; border-radius: 5px;">
+                        <i class="fa-solid fa-circle-info"></i> ملاحظة: الموظف أتمّ ساعات عمل وردية كاملة متأخرة عن جدوله الأساسي.
+                    </p>
+                </div>`;
+            }
+            else if (item.type === 'perm') {
+                // حالة الاستئذان المقبول
+                html += `
+                <div class="detail-card" style="border-right: 4px solid #8b5cf6;">
+                    <div class="dc-header">
+                        <span class="dc-date">${item.date}</span>
+                        <span class="badge" style="background:rgba(139,92,246,0.1); color:#8b5cf6; border:1px solid #8b5cf6;">استئذان مقبول</span>
+                    </div>
+                    <div class="dc-body">
+                        <div class="dc-info-group"><div class="dc-label">الوردية</div><div class="dc-value">${item.scheduled}</div></div>
+                        <div class="dc-info-group"><div class="dc-label">البصمة</div><div class="dc-value">${item.actual}</div></div>
+                        <div class="dc-info-group" style="text-align:left;">
+                            <div class="dc-label">إذن مسبق</div>
+                            <div class="dc-delay-tag" style="background:rgba(139,92,246,0.2); color:#8b5cf6; border-color:#8b5cf6;">${item.allowedHours} ساعات</div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+            else if (item.type === 'absent') {
+                // حالة الغياب
+                html += `
+                <div class="detail-card" style="border-right: 4px solid var(--danger);">
+                    <div class="dc-header">
+                        <span class="dc-date">${item.date}</span>
+                        <span class="badge badge-no">غائب</span>
+                    </div>
+                    <div style="font-size:0.9rem; color:var(--text-dim); padding: 5px 0;">
+                        لم يسجل حضور في وردية: <b style="color:#fff">${item.scheduled}</b>
+                    </div>
+                </div>`;
+            }
+            else if (item.type === 'extra') {
+                // حالة الحضور في الإجازة
+                html += `
+                <div class="detail-card" style="border-right: 4px solid var(--success);">
+                    <div class="dc-header">
+                        <span class="dc-date">${item.date}</span>
+                        <span class="badge badge-ok">إضافي / إجازة</span>
+                    </div>
+                    <div class="dc-body">
+                        <div class="dc-info-group"><div class="dc-label">الحالة</div><div class="dc-value">حضر في إجازة</div></div>
+                        <div class="dc-info-group" style="text-align:left;">
+                            <div class="dc-label">بصمة الدخول</div>
+                            <div class="dc-value" style="color:var(--success)">${item.clockIn}</div>
+                        </div>
+                    </div>
+                </div>`;
+            }
+        });
+    }
+
+    // إذا لم تكن هناك أي تفاصيل (سجل نظيف)
+    if (html === '') {
+        html = `
+        <div style="text-align:center; padding:40px 20px;">
+            <div style="width:80px; height:80px; background:rgba(16,185,129,0.1); color:var(--success); border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 0 auto 20px; font-size:2.5rem;">
+                <i class="fa-solid fa-check-double"></i>
+            </div>
+            <h4 style="color:#fff; margin-bottom:10px;">سجل نظيف تماماً</h4>
+            <p style="color:var(--text-dim); font-size:0.9rem;">الموظف ملتزم بكافة مواعيد وردياته في هذه الفترة.</p>
+        </div>`;
     }
 
     document.getElementById('shiftDetailContent').innerHTML = html;
