@@ -1310,7 +1310,7 @@ function generateShiftReport(from, to, ef) {
             absentInShift: 0, 
             cameOnOff: 0, 
             shiftChange: 0,      
-            lateArrival: 0,     // حقل جديد للتأخير
+            lateArrival: 0,     
             authorizedPerms: 0,  
             details: [] 
         };
@@ -1332,47 +1332,48 @@ function generateShiftReport(from, to, ef) {
                     rep[u].absentInShift++; 
                     rep[u].details.push({ date: ds, type: 'absent', scheduled: sv });
                 } else {
-                    // حساب وقت الدخول بالدقائق
+                    // تحويل وقت البداية والنهاية المجدول لدقائق
                     let [sh, sm] = st.start.split(':').map(Number);
                     let [eh, em] = st.end.split(':').map(Number);
-                    
+                    const scheduledStartMins = sh * 60 + sm;
+                    const scheduledEndMins = eh * 60 + em;
+                    const scheduledDuration = scheduledEndMins - scheduledStartMins;
+
+                    // تحويل وقت البصمة الفعلي (دخول وخروج) لدقائق
                     let timeInClean = att.clockIn.replace(/(AM|PM)/i, '').trim();
                     let [ah, am] = timeInClean.split(':').map(Number);
                     if (att.clockIn.toLowerCase().includes('pm') && ah !== 12) ah += 12;
                     if (att.clockIn.toLowerCase().includes('am') && ah === 12) ah = 0;
-                    
-                    const delay = (ah * 60 + am) - (sh * 60 + sm);
+                    const actualStartMins = ah * 60 + am;
 
-                    if (delay > 45) {
+                    let actualDuration = 0;
+                    if (co) {
+                        let timeOutClean = co.replace(/(AM|PM)/i, '').trim();
+                        let [aoh, aom] = timeOutClean.split(':').map(Number);
+                        if (co.toLowerCase().includes('pm') && aoh !== 12) aoh += 12;
+                        if (co.toLowerCase().includes('am') && aoh === 12) aoh = 0;
+                        actualDuration = (aoh * 60 + aom) - actualStartMins;
+                    }
+
+                    const diffFromStart = actualStartMins - scheduledStartMins;
+
+                    // إذا كان الفرق (سواء تأخير أو تبكير) أكثر من 45 دقيقة
+                    if (Math.abs(diffFromStart) > 45) {
                         const allowedHours = att.permissionHours || 0;
-                        // إذا كان هناك استئذان مسجل يظهر في خانة استئذان
+                        
                         if (allowedHours > 0) {
                             rep[u].authorizedPerms++;
-                            rep[u].details.push({ date: ds, type: 'perm', scheduled: st.start, actual: att.clockIn, delay: delay, allowedHours });
+                            rep[u].details.push({ date: ds, type: 'perm', scheduled: st.start, actual: att.clockIn, delay: diffFromStart, allowedHours });
                         } else {
-                            // منطق التفرقة: هل خرج الموظف في موعده أم تأخر؟
-                            let isShiftChange = false;
-                            if (co) {
-                                let timeOutClean = co.replace(/(AM|PM)/i, '').trim();
-                                let [aoh, aom] = timeOutClean.split(':').map(Number);
-                                if (co.toLowerCase().includes('pm') && aoh !== 12) aoh += 12;
-                                if (co.toLowerCase().includes('am') && aoh === 12) aoh = 0;
-                                
-                                const actualOutMins = (aoh * 60 + aom);
-                                const scheduledOutMins = (eh * 60 + em);
-                                
-                                // إذا استمر الموظف في العمل بعد موعد خروجه الأصلي بـ 45 دقيقة فأكثر، نعتبرها "تغيير وردية"
-                                if (actualOutMins > (scheduledOutMins + 45)) {
-                                    isShiftChange = true;
-                                }
-                            }
-
-                            if (isShiftChange) {
+                            // المنطق الجديد: إذا عملت نفس عدد الساعات المطلوبة (أو أكثر) تعتبر تغيير وردية
+                            // حتى لو حضرت بدري 3 ساعات وخرجت بدري 3 ساعات
+                            if (actualDuration >= (scheduledDuration - 15)) { // سماح 15 دقيقة
                                 rep[u].shiftChange++;
-                                rep[u].details.push({ date: ds, type: 'change', scheduled: st.start, actual: att.clockIn, delay: delay });
+                                rep[u].details.push({ date: ds, type: 'change', scheduled: st.start, actual: att.clockIn, delay: diffFromStart });
                             } else {
+                                // إذا حضر متأخر ولم يعوض الوقت في النهاية
                                 rep[u].lateArrival++;
-                                rep[u].details.push({ date: ds, type: 'late', scheduled: st.start, actual: att.clockIn, delay: delay });
+                                rep[u].details.push({ date: ds, type: 'late', scheduled: st.start, actual: att.clockIn, delay: diffFromStart });
                             }
                         }
                     }
@@ -2166,4 +2167,4 @@ function openShiftDetail(u) {
         </div>
     </div>
 </div>
-    </html>
+    </html> 
